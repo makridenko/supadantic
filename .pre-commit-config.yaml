@@ -1,0 +1,29 @@
+repos:
+  - repo: https://github.com/ambv/black
+    rev: 22.6.0
+    hooks:
+    - id: black
+  - repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
+    hooks:
+    - id: flake8
+      args: [--config=setup.cfg]
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: isort
+        entry: isort
+        types: [python]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: trailing-whitespace
+  - repo: local
+    hooks:
+      - id: run-tests
+        name: run tests
+        language: system
+        entry: pytest . -x
+        files: \.py$
+        pass_filenames: false
