@@ -5,7 +5,6 @@ on: push
 jobs:
   run-tests:
     runs-on: ${{ matrix.os }}
-    needs: black-formatting-check
     strategy:
       matrix:
         os:
