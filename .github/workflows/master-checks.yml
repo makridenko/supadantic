@@ -1,6 +1,9 @@
-name: Package preparing
+name: Checks for master branch
 
-on: push
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   run-tests:
@@ -9,14 +12,14 @@ jobs:
       matrix:
         os:
           - 'ubuntu-latest'
-          # - 'macos-latest'
-          # - 'windows-latest'
+          - 'macos-latest'
+          - 'windows-latest'
         python-version:
-          # - '3.8'
-          # - '3.9'
+          - '3.8'
+          - '3.9'
           - '3.10'
-            # - '3.11'
-            # - '3.12'
+          - '3.11'
+          - '3.12'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python

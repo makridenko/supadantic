@@ -1,0 +1,23 @@
+name: Checks for pull request
+
+on:
+  push:
+    branches-ignore:
+      - master
+
+jobs:
+  run-tests:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install --with dev
+      - name: Run tests
+        run: poetry run pytest -x
