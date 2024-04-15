@@ -1,0 +1,11 @@
+poetry.lock
+__pycache__/
+.idea
+.vscode
+.env
+
+.cache
+
+local*
+
+src/celerybeat-schedule
