@@ -67,4 +67,3 @@ class BaseDBEntity(BaseModel, ABC):
     def bulk_update(cls, *, ids: List[int], data: dict) -> None:
         db_client = cls._get_db_client()
         db_client.bulk_update(ids=ids, data=data)
-

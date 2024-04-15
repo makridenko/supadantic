@@ -1,4 +1,4 @@
-from unittest.mock import Mock, PropertyMock, MagicMock
+from unittest.mock import MagicMock, Mock, PropertyMock
 
 import pytest
 from pytest_mock import MockerFixture
