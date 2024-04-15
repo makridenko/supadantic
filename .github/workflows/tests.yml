@@ -28,5 +28,5 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
           poetry install --with dev
-      #- name: Run tests
-      #  run: poetry run pytest -x
+      - name: Run tests
+        run: poetry run pytest -x
