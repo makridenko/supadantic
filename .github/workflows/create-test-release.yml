@@ -22,9 +22,11 @@ jobs:
       - name: Run tests
         run: poetry run pytest -x
   release-prepare:
+    needs: [run-tests]
     runs-on: 'ubuntu-latest'
     steps:
-      - name: Build and publish to pypi
+      - uses: actions/checkout@v4
+      - name: Build and publish to test pypi
         uses: JRubics/poetry-publish@v2.0
         with:
           pypi_token: ${{ secrets.TEST_PYPI_TOKEN }}
