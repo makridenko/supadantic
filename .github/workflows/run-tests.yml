@@ -1,9 +1,11 @@
-name: Checks for master branch
+name: Run tests
 
 on:
   push:
-    branches:
+    branches_ignore:
       - master
+    tags_ignore:
+      - '*'
 
 jobs:
   run-tests:

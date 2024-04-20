@@ -1,9 +1,9 @@
-name: Test release build
+name: Release build
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v*'
 
 jobs:
   run-tests:
@@ -40,9 +40,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: actions/checkout@v4
-      - name: Build and publish to test pypi
+      - name: Build and publish to pypi
         uses: JRubics/poetry-publish@v2.0
         with:
-          pypi_token: ${{ secrets.TEST_PYPI_TOKEN }}
-          repository_name: "testpypi"
-          repository_url: "https://test.pypi.org/legacy/"
+          pypi_token: ${{ secrets.PYPI_TOKEN }}
