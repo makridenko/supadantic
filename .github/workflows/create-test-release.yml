@@ -9,7 +9,8 @@ on:
 
 jobs:
   release-prepare:
-    - name: Build and publish to pypi
-      uses: JRubics/poetry-publish@v2.0
-      with:
-        pypi_token: ${{ secrets.TEST_PYPI_TOKEN }}
+    steps:
+      - name: Build and publish to pypi
+        uses: JRubics/poetry-publish@v2.0
+        with:
+          pypi_token: ${{ secrets.TEST_PYPI_TOKEN }}
