@@ -4,13 +4,13 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from src.base import BaseDBEntity
+from supadantic.base import BaseDBEntity
 
 
 class TestBaseDBEntity:
     @pytest.fixture
     def entity(self, mocker) -> Type[BaseDBEntity]:
-        mocker.patch('src.base.BaseDBEntity.__abstractmethods__', set())
+        mocker.patch('supadantic.base.BaseDBEntity.__abstractmethods__', set())
         return BaseDBEntity
 
     @pytest.fixture
