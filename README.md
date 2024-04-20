@@ -40,7 +40,7 @@ User.get_list(eq={'name': 'John Doe'})
 User.get_list(neq={'name': 'Another name'})
 
 # Get one user
-user = User.get(eq={'John Doe'})
+user = User.get(eq={'id': 1})
 
 # Bulk update
 User.bulk_update(ids=[1,2], data={'name': 'New name'})
