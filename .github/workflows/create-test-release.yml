@@ -1,6 +1,4 @@
 name: Release prepare
-needs:
-  - pr-checks
 
 on:
   push:
