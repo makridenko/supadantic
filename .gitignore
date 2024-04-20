@@ -3,9 +3,5 @@ __pycache__/
 .idea
 .vscode
 .env
-
-.cache
-
-local*
-
-src/celerybeat-schedule
+.pytest_cache/
+dist/

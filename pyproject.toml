@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "supadantic"
-version = "0.0.1"
+version = "0.0.1-beta.1"
 description = "Supabase integration for pydantic"
 authors = ["Alexey Makridenko <alexey.makridenko@gmail.com>"]
 license = "MIT license"
 readme = "README.md"
-packages = [{include = "src"}]
+packages = [{include = "supadantic"}]
 
 [tool.pytest.ini_options]
-pythonpath = "src"
+pythonpath = "supadantic"
 
 [tool.black]
 line-length = 120
@@ -19,10 +19,8 @@ python = "^3.10"
 supabase = "^2.4.2"
 pydantic = "^2.7.0"
 
-
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.7.0"
-
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.1.1"
