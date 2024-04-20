@@ -1,0 +1,15 @@
+name: Release prepare
+needs:
+  - pr-checks
+
+on:
+  push:
+    ignore_branches:
+      - master
+
+jobs:
+  release-prepare:
+    - name: Build and publish to pypi
+      uses: JRubics/poetry-publish@v2.0
+      with:
+        pypi_token: ${{ secrets.TEST_PYPI_TOKEN }}
