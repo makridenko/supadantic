@@ -42,6 +42,9 @@ User.get_list(neq={'name': 'Another name'})
 # Get one user
 user = User.get(eq={'id': 1})
 
+# Delete this user
+user.delete()
+
 # Bulk update
 User.bulk_update(ids=[1,2], data={'name': 'New name'})
 ```

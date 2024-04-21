@@ -36,3 +36,6 @@ class SupabaseClient:
     def bulk_update(self, *, ids: List[int], data: Dict[str, Any]) -> List[Dict[str, Any]]:
         response = self.query.update(data).in_('id', ids).execute()
         return response.data
+
+    def delete(self, *, id: int) -> None:
+        self.query.delete().eq('id', id).execute()
