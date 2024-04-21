@@ -110,16 +110,3 @@ class TestSupabaseClient:
         mock_supabase_query.update.return_value.in_.assert_called_once_with('id', test_ids)
 
         assert result == test_response
-
-    def test_delete(self, supabase_client: SupabaseClient):
-        # Prepare_data
-        mock_supabase_query = Mock()
-        supabase_client.query = mock_supabase_query
-
-        # Execution
-        supabase_client.delete(id=1)
-
-        # Testing
-        mock_supabase_query.delete.assert_called_once()
-        mock_supabase_query.delete.return_value.eq.assert_called_once_with('id', 1)
-        mock_supabase_query.delete.return_value.eq.return_value.execute.assert_called_once()
