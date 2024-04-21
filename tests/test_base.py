@@ -175,3 +175,23 @@ class TestBaseDBEntity:
             # Testing
             mock_get_db_client.assert_called_once()
             mock_db_client_bulk_update.assert_called_once_with(ids=test_ids, data=test_data)
+
+        def test_delete(
+            self,
+            entity: Type[BaseDBEntity],
+            test_supabase_client: MagicMock,
+            mock_get_db_client: MagicMock,
+            mocker: MockerFixture,
+        ):
+            # Prepare data
+            test_entity_with_id = entity(id=1)
+            test_entity_without_id = entity()
+            mock_db_client_delete = mocker.patch.object(test_supabase_client, 'delete')
+
+            # Execution
+            test_entity_with_id.delete()
+            test_entity_without_id.delete()
+
+            # Testing
+            mock_get_db_client.assert_called_once()
+            mock_db_client_delete.assert_called_once_with(id=1)
