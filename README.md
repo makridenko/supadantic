@@ -1,5 +1,10 @@
 # Supadantic
 
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/supadantic)](https://github.com/makridenko/supadantic)
+[![GitHub License](https://img.shields.io/github/license/makridenko/supadantic)](https://github.com/makridenko/supadantic)
+[![versions](https://img.shields.io/pypi/pyversions/supadantic.svg)](https://github.com/makridenko/supadantic)
+[![pypi](https://img.shields.io/pypi/v/supadantic.svg)](https://pypi.python.org/pypi/supadantic)
+
 Supadantic is a small Python library that allows you to manage [Supabase](supabase.com) tables through [Pydantic](https://github.com/pydantic/pydantic) models. It is very convenient to use in projects based on [FastAPI](https://github.com/tiangolo/fastapi), [Flask](https://github.com/pallets/flask), and so on.
 
 
