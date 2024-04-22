@@ -1,17 +1,17 @@
 import pytest
 
-from .test_classes.entity import EntityMock
+from .test_classes.models import ModelMock
 
 
-class TestBaseDBEntity:
+class TestBaseSBModel:
     def test_all(self):
-        result_qs = EntityMock.all()
+        result_qs = ModelMock.all()
 
         assert result_qs.objects == [
-            EntityMock(id=1, name='test_name'),
-            EntityMock(id=2, name='unique_name'),
-            EntityMock(id=3, name='test_name'),
-            EntityMock(id=4, name='new_name'),
+            ModelMock(id=1, name='test_name'),
+            ModelMock(id=2, name='unique_name'),
+            ModelMock(id=3, name='test_name'),
+            ModelMock(id=4, name='new_name'),
         ]
 
     @pytest.mark.parametrize(
@@ -27,28 +27,28 @@ class TestBaseDBEntity:
         # Prepare data
         filters = {}
         expected_data = [
-            EntityMock(id=1, name='test_name'),
-            EntityMock(id=2, name='unique_name'),
-            EntityMock(id=3, name='test_name'),
-            EntityMock(id=4, name='new_name'),
+            ModelMock(id=1, name='test_name'),
+            ModelMock(id=2, name='unique_name'),
+            ModelMock(id=3, name='test_name'),
+            ModelMock(id=4, name='new_name'),
         ]
         if with_eq:
             filters['eq'] = {'name': 'test_name'}
-            expected_data.remove(EntityMock(id=2, name='unique_name'))
-            expected_data.remove(EntityMock(id=4, name='new_name'))
+            expected_data.remove(ModelMock(id=2, name='unique_name'))
+            expected_data.remove(ModelMock(id=4, name='new_name'))
 
         if with_neq:
             filters['neq'] = {'id': 1}
-            expected_data.remove(EntityMock(id=1, name='test_name'))
+            expected_data.remove(ModelMock(id=1, name='test_name'))
 
         # Testing
-        actual_qs = EntityMock.filter(**filters)
+        actual_qs = ModelMock.filter(**filters)
         assert actual_qs.objects == expected_data
 
     class TestSave:
         def test_create(self):
             # Prepare data
-            test_entity = EntityMock(name='test_name')
+            test_entity = ModelMock(name='test_name')
 
             # Execution
             updated_entity = test_entity.save()
@@ -59,7 +59,7 @@ class TestBaseDBEntity:
 
         def test_update(self):
             # Prepare data
-            test_entity = EntityMock(id=2, name='test_name')
+            test_entity = ModelMock(id=2, name='test_name')
 
             # Execution
             updated_entity = test_entity.save()
@@ -71,17 +71,17 @@ class TestBaseDBEntity:
         class TestGet:
             def test(self):
                 # Execution
-                actual_entity = EntityMock.get(eq={'name': 'unique_name'})
+                actual_entity = ModelMock.get(eq={'name': 'unique_name'})
 
                 # Testing
                 assert actual_entity.id == 2
                 assert actual_entity.name == 'unique_name'
 
             def test_with_does_not_exist(self):
-                with pytest.raises(EntityMock.DoesNotExist):
-                    EntityMock.get(eq={'id': 5})
+                with pytest.raises(ModelMock.DoesNotExist):
+                    ModelMock.get(eq={'id': 5})
 
             def test_with_multiple_objects_returned(self):
                 # Execution
-                with pytest.raises(EntityMock.MultipleObjectsReturned):
-                    EntityMock.get(eq={'name': 'test_name'})
+                with pytest.raises(ModelMock.MultipleObjectsReturned):
+                    ModelMock.get(eq={'name': 'test_name'})

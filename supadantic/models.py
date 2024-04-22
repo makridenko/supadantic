@@ -4,11 +4,11 @@ from typing import Dict, NoReturn
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from .queryset import QuerySet
+from .q_set import QSet
 from .supabase_client import SupabaseClient
 
 
-class BaseDBEntity(BaseModel, ABC):
+class BaseSBModel(BaseModel, ABC):
     id: int | None = None
 
     class DoesNotExist(Exception):
@@ -28,12 +28,12 @@ class BaseDBEntity(BaseModel, ABC):
         return SupabaseClient(table_name=table_name)
 
     @classmethod
-    def all(cls) -> QuerySet:
-        return QuerySet(model_class=cls).all()
+    def all(cls) -> QSet:
+        return QSet(model_class=cls).all()
 
     @classmethod
-    def filter(cls: type[Self], *, eq: Dict | None = None, neq: Dict | None = None) -> QuerySet:
-        return QuerySet(model_class=cls).filter(eq=eq, neq=neq)
+    def filter(cls: type[Self], *, eq: Dict | None = None, neq: Dict | None = None) -> QSet:
+        return QSet(model_class=cls).filter(eq=eq, neq=neq)
 
     def save(self: Self) -> Self:
         db_client = self._get_db_client()

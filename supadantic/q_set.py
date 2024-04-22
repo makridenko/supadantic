@@ -4,13 +4,13 @@ from typing_extensions import Self
 
 
 if TYPE_CHECKING:
-    from .base import BaseDBEntity
+    from .models import BaseSBModel
 
 
-class QuerySet:
+class QSet:
     '''Lazy database lookup for a set of objects'''
 
-    def __init__(self, model_class: Type['BaseDBEntity'], objects: List['BaseDBEntity'] | None = None) -> None:
+    def __init__(self, model_class: Type['BaseSBModel'], objects: List['BaseSBModel'] | None = None) -> None:
         self._model_class = model_class
         self.client = self._model_class._get_db_client()
         self.objects = objects if objects else []
@@ -46,11 +46,11 @@ class QuerySet:
     def count(self) -> int:
         return len(self.objects)
 
-    def first(self) -> 'BaseDBEntity | None':
+    def first(self) -> 'BaseSBModel | None':
         if self.count():
             return self[0]
 
-    def last(self) -> 'BaseDBEntity | None':
+    def last(self) -> 'BaseSBModel | None':
         if self.count():
             return self[-1]
 
@@ -63,14 +63,14 @@ class QuerySet:
     def __len__(self) -> int:
         return len(self.objects)
 
-    def __getitem__(self, index: int) -> 'BaseDBEntity':
+    def __getitem__(self, index: int) -> 'BaseSBModel':
         return list(self)[index]
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} {list(self)} >'
 
     def __eq__(self, obj: object) -> bool:
-        if not isinstance(obj, QuerySet):
+        if not isinstance(obj, QSet):
             return False
 
         return all(

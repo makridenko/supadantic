@@ -1,9 +1,9 @@
-from supadantic.base import BaseDBEntity
+from supadantic.models import BaseSBModel
 
 from .supabase_client import SupabaseClientMock
 
 
-class EntityMock(BaseDBEntity):
+class ModelMock(BaseSBModel):
     name: str
 
     @classmethod
