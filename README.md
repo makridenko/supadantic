@@ -21,39 +21,47 @@ Also, you need to add `SUPABASE_URL` and `SUPABASE_KEY` to your env variables.
 ## A Simple example
 
 ```python
-from supadantic import BaseDBEntity
+from supadantic.models import BaseSBModel
 
 
-class User(BaseDBEntity):
-    # id field already defined in BaseDBEntity class
+class User(BaseSBModel):
+    # id field already defined in BaseSBModel class
     name: str = 'John Doe'
+    is_active: bool = True
 
     @classmethod
     def _get_table_name(cls) -> str:
         return 'users'
 
 # Save user
-user = User()
-user.save()
+active_user = User(name='John Snow')
+active_user.save()
 
-another_user = User(name='Another name')
-another_user.save()
+non_active_user = User(is_active=False)
+non_active_user.save()
 
-# Get users
-User.get_list()
+# Get all users
+users = User.all()
 
-# Get users with name == 'John Doe'
-User.get_list(eq={'name': 'John Doe'})
+# Count users
+users.count()
 
-# Get users with name != 'Another name'
-User.get_list(neq={'name': 'Another name'})
+# Get first user
+users.first()
 
-# Get one user
-user = User.get(eq={'id': 1})
+# Get last user
+users.last()
 
-# Delete this user
+# Filter users
+active_users = User.filter(eq={'is_active': True})
+
+# Update all active users
+active_users.update(data={'is_active': False})
+
+# Delete all non active users
+User.filter(neq={'is_active': True}).delete()
+
+# Get one user and delete
+user = User.get(eq={'name': 'John Doe'})
 user.delete()
-
-# Bulk update
-User.bulk_update(ids=[1,2], data={'name': 'New name'})
 ```
