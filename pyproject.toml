@@ -18,6 +18,7 @@ skip-string-normalization = true
 python = "^3.10"
 supabase = "^2.4.2"
 pydantic = "^2.7.0"
+sphinx = "^7.3.7"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.7.0"
