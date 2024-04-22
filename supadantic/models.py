@@ -1,13 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import List, NoReturn
+from typing import Dict, NoReturn
 
 from pydantic import BaseModel
 from typing_extensions import Self
 
+from .q_set import QSet
 from .supabase_client import SupabaseClient
 
 
-class BaseDBEntity(BaseModel, ABC):
+class BaseSBModel(BaseModel, ABC):
     id: int | None = None
 
     class DoesNotExist(Exception):
@@ -27,18 +28,12 @@ class BaseDBEntity(BaseModel, ABC):
         return SupabaseClient(table_name=table_name)
 
     @classmethod
-    def get_list(cls: type[Self], *, eq: dict | None = None, neq: dict | None = None) -> List[Self]:
-        db_client = cls._get_db_client()
-        _filters = {}
+    def all(cls) -> QSet:
+        return QSet(model_class=cls).all()
 
-        if eq:
-            _filters['eq'] = eq
-
-        if neq:
-            _filters['neq'] = neq
-
-        response_data = db_client.select(**_filters)
-        return list(cls(**data) for data in response_data)
+    @classmethod
+    def filter(cls: type[Self], *, eq: Dict | None = None, neq: Dict | None = None) -> QSet:
+        return QSet(model_class=cls).filter(eq=eq, neq=neq)
 
     def save(self: Self) -> Self:
         db_client = self._get_db_client()
@@ -52,21 +47,16 @@ class BaseDBEntity(BaseModel, ABC):
         return self.__class__(**response_data)
 
     @classmethod
-    def get(cls, *, eq: dict, neq: dict | None = None) -> Self | NoReturn:
-        result = cls.get_list(eq=eq, neq=neq)
+    def get(cls, *, eq: Dict, neq: Dict | None = None) -> Self | NoReturn:
+        result_qs = cls.filter(eq=eq, neq=neq)
         _filters_str = f"eq={eq}, neq={neq}"
-        if not result:
+        if not result_qs:
             raise cls.DoesNotExist(f'{cls.__name__} object with {_filters_str} does not exist!')
 
-        if len(result) > 1:
+        if result_qs.count() > 1:
             raise cls.MultipleObjectsReturned(f'For {_filters_str} returned more than 1 {cls.__name__} objects!')
 
-        return result[0]
-
-    @classmethod
-    def bulk_update(cls, *, ids: List[int], data: dict) -> None:
-        db_client = cls._get_db_client()
-        db_client.bulk_update(ids=ids, data=data)
+        return result_qs.first()  # pyright: ignore
 
     def delete(self: Self) -> None:
         if self.id:

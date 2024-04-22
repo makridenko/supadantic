@@ -83,10 +83,22 @@ class TestSupabaseClient:
         # Assert the result
         assert result == [{'id': 1}, {'id': 2}]
 
+    def test_delete(self, supabase_client: SupabaseClient):
+        # Prepare_data
+        mock_supabase_query = Mock()
+        supabase_client.query = mock_supabase_query
+
+        # Execution
+        supabase_client.delete(id=1)
+
+        # Testing
+        mock_supabase_query.delete.assert_called_once()
+        mock_supabase_query.delete.return_value.eq.assert_called_once_with('id', 1)
+        mock_supabase_query.delete.return_value.eq.return_value.execute.assert_called_once()
+
     def test_bulk_update(self, supabase_client: SupabaseClient):
         # Prepare data
         mock_supabase_query = Mock()
-
         supabase_client.query = mock_supabase_query
 
         test_data = {'name': 'new_name'}
@@ -111,15 +123,27 @@ class TestSupabaseClient:
 
         assert result == test_response
 
-    def test_delete(self, supabase_client: SupabaseClient):
-        # Prepare_data
+    def test_bulk_delete(self, supabase_client: SupabaseClient):
+        # Prepare data
         mock_supabase_query = Mock()
         supabase_client.query = mock_supabase_query
+        test_ids = (1, 2, 3)
+        test_response = [
+            {'id': 1, 'name': 'name'},
+            {'id': 2, 'name': 'name'},
+            {'id': 3, 'name': 'name'},
+        ]
+
+        mock_response = Mock()
+        type(mock_response).data = PropertyMock(return_value=test_response)
+
+        mock_supabase_query.delete.return_value.in_.return_value.execute.return_value = mock_response
 
         # Execution
-        supabase_client.delete(id=1)
+        result = supabase_client.bulk_delete(ids=test_ids)
 
         # Testing
         mock_supabase_query.delete.assert_called_once()
-        mock_supabase_query.delete.return_value.eq.assert_called_once_with('id', 1)
-        mock_supabase_query.delete.return_value.eq.return_value.execute.assert_called_once()
+        mock_supabase_query.delete.return_value.in_.assert_called_once_with('id', test_ids)
+
+        assert result == test_response
