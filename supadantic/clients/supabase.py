@@ -3,8 +3,10 @@ from typing import Any, Dict, Iterable, List
 
 from supabase.client import create_client
 
+from .base import BaseClient
 
-class SupabaseClient:
+
+class SupabaseClient(BaseClient):
     def __init__(self, table_name: str):
         url: str = os.getenv('SUPABASE_URL') or ''
         key: str = os.getenv('SUPABASE_KEY') or ''

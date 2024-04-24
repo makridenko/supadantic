@@ -3,13 +3,13 @@ from unittest.mock import MagicMock, Mock, PropertyMock
 import pytest
 from pytest_mock import MockerFixture
 
-from supadantic.supabase_client import SupabaseClient
+from supadantic.clients import SupabaseClient
 
 
 class TestSupabaseClient:
     @pytest.fixture(autouse=True)
     def mock_create_client(self, mocker: MockerFixture) -> MagicMock:
-        return mocker.patch('supadantic.supabase_client.create_client')
+        return mocker.patch('supadantic.clients.supabase.create_client')
 
     @pytest.fixture
     def supabase_client(self) -> SupabaseClient:
