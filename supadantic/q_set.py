@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Type
+from typing import TYPE_CHECKING, Dict, List, NoReturn, Type
 
 from typing_extensions import Self
 
@@ -42,6 +42,21 @@ class QSet:
         response_data = self.client.select(**_filters)
         objects = list(self._model_class(**data) for data in response_data)
         return self.__class__(model_class=self._model_class, objects=objects)
+
+    def get(self, *, eq: Dict | None = None, neq: Dict | None = None) -> 'BaseSBModel' | NoReturn:
+        result_qs = self.filter(eq=eq, neq=neq)
+        _filters_str = f'eq={eq}, neq={neq}'
+        if not result_qs:
+            raise self._model_class.DoesNotExist(
+                f'{self._model_class.__name__} object with {_filters_str} does not exist!'
+            )
+
+        if result_qs.count() > 1:
+            raise self._model_class.MultipleObjectsReturned(
+                f'For {_filters_str} returned more than 1 {self._model_class.__name__} objects!'
+            )
+
+        return result_qs.first()  # pyright: ignore
 
     def count(self) -> int:
         return len(self.objects)
