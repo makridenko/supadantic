@@ -1,0 +1,1 @@
+from .supabase import SupabaseClient

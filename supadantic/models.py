@@ -4,8 +4,8 @@ from typing import Dict, NoReturn
 from pydantic import BaseModel
 from typing_extensions import Self
 
+from .clients import SupabaseClient
 from .q_set import QSet
-from .supabase_client import SupabaseClient
 
 
 class BaseSBModel(BaseModel, ABC):

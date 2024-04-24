@@ -1,7 +1,9 @@
 from typing import Any, Dict, Iterable, List
 
+from supadantic.clients.base import BaseClient
 
-class SupabaseClientMock:
+
+class SupabaseClientMock(BaseClient):
     def __init__(self, table_name: str):
         pass
 
