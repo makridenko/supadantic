@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Tuple, Type
+from typing import Any
 
 from pydantic import BaseModel
 from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
@@ -10,8 +10,8 @@ from .q_set import QSet
 
 
 class ModelMetaclass(PydanticModelMetaclass):
-    def __new__(mcs: Type, cls_name: str, bases: Tuple[Type[Any], ...], namespace: Dict[str, Any], **kwargs: Any):
-        new_model = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # pyright: ignore
+    def __new__(mcs, name: str, bases: Any, namespace: dict, *args, **kwargs) -> type:
+        new_model = super().__new__(mcs, name, bases, namespace, *args, **kwargs)
         new_model.objects = QSet(new_model)
         return new_model
 

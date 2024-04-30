@@ -4,6 +4,7 @@ from typing_extensions import Self
 
 
 if TYPE_CHECKING:
+    from .clients import SupabaseClient
     from .models import BaseSBModel
 
 
@@ -12,8 +13,11 @@ class QSet:
 
     def __init__(self, model_class: Type['BaseSBModel'], objects: List['BaseSBModel'] | None = None) -> None:
         self._model_class = model_class
-        self.client = self._model_class._get_db_client()
         self.objects = objects if objects else []
+
+    @property
+    def client(self) -> 'SupabaseClient':
+        return self._model_class._get_db_client()
 
     def update(self, data: Dict) -> int:
         ids = tuple(obj.id for obj in self.objects)
@@ -85,12 +89,9 @@ class QSet:
         return f'<{self.__class__.__name__} {list(self)} >'
 
     def __eq__(self, obj: object) -> bool:
-        if not isinstance(obj, QSet):
-            return False
-
         return all(
             (
-                self._model_class == obj._model_class,
-                self.objects == obj.objects,
+                self._model_class == getattr(obj, '_model_class'),
+                self.objects == getattr(obj, 'objects'),
             )
         )
