@@ -1,9 +1,10 @@
-from typing import TYPE_CHECKING, Dict, List, Type
+from typing import TYPE_CHECKING, Dict, List, NoReturn, Type
 
 from typing_extensions import Self
 
 
 if TYPE_CHECKING:
+    from .clients import SupabaseClient
     from .models import BaseSBModel
 
 
@@ -12,8 +13,11 @@ class QSet:
 
     def __init__(self, model_class: Type['BaseSBModel'], objects: List['BaseSBModel'] | None = None) -> None:
         self._model_class = model_class
-        self.client = self._model_class._get_db_client()
         self.objects = objects if objects else []
+
+    @property
+    def client(self) -> 'SupabaseClient':
+        return self._model_class._get_db_client()
 
     def update(self, data: Dict) -> int:
         ids = tuple(obj.id for obj in self.objects)
@@ -43,6 +47,21 @@ class QSet:
         objects = list(self._model_class(**data) for data in response_data)
         return self.__class__(model_class=self._model_class, objects=objects)
 
+    def get(self, *, eq: Dict | None = None, neq: Dict | None = None) -> 'BaseSBModel' | NoReturn:
+        result_qs = self.filter(eq=eq, neq=neq)
+        _filters_str = f'eq={eq}, neq={neq}'
+        if not result_qs:
+            raise self._model_class.DoesNotExist(
+                f'{self._model_class.__name__} object with {_filters_str} does not exist!'
+            )
+
+        if result_qs.count() > 1:
+            raise self._model_class.MultipleObjectsReturned(
+                f'For {_filters_str} returned more than 1 {self._model_class.__name__} objects!'
+            )
+
+        return result_qs.first()  # pyright: ignore
+
     def count(self) -> int:
         return len(self.objects)
 
@@ -70,12 +89,9 @@ class QSet:
         return f'<{self.__class__.__name__} {list(self)} >'
 
     def __eq__(self, obj: object) -> bool:
-        if not isinstance(obj, QSet):
-            return False
-
         return all(
             (
-                self._model_class == obj._model_class,
-                self.objects == obj.objects,
+                self._model_class == getattr(obj, '_model_class'),
+                self.objects == getattr(obj, 'objects'),
             )
         )

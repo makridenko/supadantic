@@ -11,5 +11,5 @@ class ModelMock(BaseSBModel):
         return 'test'
 
     @classmethod
-    def _get_db_client(cls):  # pyright: ignore
+    def _get_db_client(cls) -> SupabaseClientMock:  # pyright: ignore
         return SupabaseClientMock(table_name='test')

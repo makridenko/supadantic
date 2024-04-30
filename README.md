@@ -32,7 +32,7 @@ non_active_user = User(is_active=False)
 non_active_user.save()
 
 # Get all users
-users = User.all()
+users = User.objects.all()
 
 # Count users
 users.count()
@@ -44,15 +44,15 @@ users.first()
 users.last()
 
 # Filter users
-active_users = User.filter(eq={'is_active': True})
+active_users = User.objects.filter(eq={'is_active': True})
 
 # Update all active users
 active_users.update(data={'is_active': False})
 
 # Delete all non active users
-User.filter(neq={'is_active': True}).delete()
+User.objects.filter(neq={'is_active': True}).delete()
 
 # Get one user and delete
-user = User.get(eq={'name': 'John Doe'})
+user = User.objects.get(eq={'name': 'John Doe'})
 user.delete()
 ```

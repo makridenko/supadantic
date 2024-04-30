@@ -59,6 +59,7 @@ class TestQSet:
             ModelMock(id=3, name='test_name'),
             ModelMock(id=4, name='new_name'),
         ]
+
         if with_eq:
             filters['eq'] = {'name': 'test_name'}
             expected_objects.remove(ModelMock(id=2, name='unique_name'))
@@ -71,8 +72,17 @@ class TestQSet:
         # Testing
         assert QSet(model_class=ModelMock).filter(**filters) == QSet(
             model_class=ModelMock,
-            objects=expected_objects,
+            objects=expected_objects,  # pyright: ignore
         )
+
+    def test_get(self):
+        assert QSet(model_class=ModelMock).get(eq={'id': 1}) == ModelMock(id=1, name='test_name')
+
+        with pytest.raises(ModelMock.DoesNotExist, match='does not exist!'):
+            QSet(model_class=ModelMock).get(eq={'id': 5})
+
+        with pytest.raises(ModelMock.MultipleObjectsReturned, match='returned more than 1'):
+            QSet(model_class=ModelMock).get(eq={'name': 'test_name'})
 
     def test_count(self):
         assert (
