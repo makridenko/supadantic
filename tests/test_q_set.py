@@ -6,17 +6,22 @@ from .test_classes.models import ModelMock
 
 
 class TestQSet:
-    def test_update(self):
-        assert (
-            QSet(
-                model_class=ModelMock,
-                objects=[
-                    ModelMock(id=1, name='first'),
-                    ModelMock(id=2, name='second'),
-                ],
-            ).update(data={'name': 'test_name'})
-            == 2
-        )
+    class TestUpdate:
+        def test(self):
+            assert (
+                QSet(
+                    model_class=ModelMock,
+                    objects=[
+                        ModelMock(id=1, name='first'),
+                        ModelMock(id=2, name='second'),
+                    ],
+                ).update(name='test_name')
+                == 2
+            )
+
+        def test_with_invalid_field(self):
+            with pytest.raises(QSet.InvalidField, match='Invalid field'):
+                QSet(model_class=ModelMock, objects=[ModelMock(id=1, name='name')]).update(foo='bar')
 
     def test_delete(self):
         assert (

@@ -14,6 +14,9 @@ class QSet:
     class InvalidFilter(Exception):
         pass
 
+    class InvalidField(Exception):
+        pass
+
     def __init__(self, model_class: Type['BaseSBModel'], objects: List['BaseSBModel'] | None = None) -> None:
         self._model_class = model_class
         self.objects = objects if objects else []
@@ -22,7 +25,11 @@ class QSet:
     def client(self) -> 'SupabaseClient':
         return self._model_class._get_db_client()
 
-    def update(self, data: Dict) -> int:
+    def update(self, **data) -> int:
+        for field in data.keys():
+            if field not in self._model_class.model_fields.keys():
+                raise self.InvalidField(f'Invalid field {field}!')
+
         ids = tuple(obj.id for obj in self.objects)
         response_data = self.client.bulk_update(ids=ids, data=data)  # pyright: ignore
         return len(response_data)

@@ -49,7 +49,7 @@ active_users = User.objects.filter(is_active=True)
 active_users = User.objects.exclude(is_active=False)
 
 # Update all active users
-active_users.update(data={'is_active': False})
+active_users.update(is_active=False)
 
 # Delete all non active users
 User.objects.exclude(is_active=True).delete()
