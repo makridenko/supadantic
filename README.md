@@ -20,9 +20,11 @@ class User(BaseSBModel):
     name: str = 'John Doe'
     is_active: bool = True
 
+    # By default table name is class name in snake_case
+    # If you want to change it - you should implement _get_table_name method
     @classmethod
     def _get_table_name(cls) -> str:
-        return 'users'
+        return 'db_user'
 
 # Save user
 active_user = User(name='John Snow')
