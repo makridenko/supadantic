@@ -7,7 +7,7 @@ class TestBaseSBModel:
     class TestSave:
         def test_create(self):
             # Prepare data
-            test_entity = ModelMock(name='test_name')
+            test_entity = ModelMock(name='test_name', some_array=['foo', 'bar'])
 
             # Execution
             updated_entity = test_entity.save()
@@ -18,7 +18,7 @@ class TestBaseSBModel:
 
         def test_update(self):
             # Prepare data
-            test_entity = ModelMock(id=2, name='test_name')
+            test_entity = ModelMock(id=2, name='test_name', some_array=['foo', 'bar'])
 
             # Execution
             updated_entity = test_entity.save()
@@ -28,4 +28,4 @@ class TestBaseSBModel:
             assert updated_entity.name == 'test_name'
 
     def test_objects(self):
-        assert ModelMock.objects == QSet(model_class=ModelMock)
+        assert ModelMock.objects == QSet(model_class=ModelMock)  # pyright: ignore
