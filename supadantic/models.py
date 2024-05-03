@@ -1,7 +1,9 @@
+import json
 from abc import ABC, abstractmethod
-from typing import Any
+from copy import copy
+from typing import Any, Dict
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
 from typing_extensions import Self
 
@@ -50,3 +52,27 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         if self.id:
             db_client = self._get_db_client()
             db_client.delete(id=self.id)
+
+    @model_validator(mode='before')
+    def _validate_data_from_supabase(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        array_fields = []
+        result_dict = copy(data)
+
+        for key, value in cls.model_json_schema()['properties'].items():
+            _field_is_array = any(
+                (
+                    # If field is required, it's possible to get type
+                    value.get('type', None) == 'array',
+                    # If field is optional, it's possible to get type from anyOf array
+                    any(item.get('type', None) == 'array' for item in value.get('anyOf', [])),
+                )
+            )
+
+            if _field_is_array:
+                array_fields.append(key)
+
+        for key, value in data.items():
+            if key in array_fields and isinstance(value, str):
+                result_dict[key] = json.loads(data[key])
+
+        return result_dict
