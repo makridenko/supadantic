@@ -6,17 +6,22 @@ from .test_classes.models import ModelMock
 
 
 class TestQSet:
-    def test_update(self):
-        assert (
-            QSet(
-                model_class=ModelMock,
-                objects=[
-                    ModelMock(id=1, name='first'),
-                    ModelMock(id=2, name='second'),
-                ],
-            ).update(data={'name': 'test_name'})
-            == 2
-        )
+    class TestUpdate:
+        def test(self):
+            assert (
+                QSet(
+                    model_class=ModelMock,
+                    objects=[
+                        ModelMock(id=1, name='first'),
+                        ModelMock(id=2, name='second'),
+                    ],
+                ).update(name='test_name')
+                == 2
+            )
+
+        def test_with_invalid_field(self):
+            with pytest.raises(QSet.InvalidField, match='Invalid field'):
+                QSet(model_class=ModelMock, objects=[ModelMock(id=1, name='name')]).update(foo='bar')
 
     def test_delete(self):
         assert (
@@ -41,48 +46,45 @@ class TestQSet:
             ],
         )
 
-    @pytest.mark.parametrize(
-        'with_eq,with_neq',
-        (
-            (False, False),
-            (False, True),
-            (True, False),
-            (True, True),
-        ),
-    )
-    def test_filter(self, with_eq: bool, with_neq: bool):
-        # Prepare data
-        filters = {}
-        expected_objects = [
-            ModelMock(id=1, name='test_name'),
-            ModelMock(id=2, name='unique_name'),
-            ModelMock(id=3, name='test_name'),
-            ModelMock(id=4, name='new_name'),
-        ]
+    class TestFilters:
+        def test_filter(self):
+            # Prepare data
+            expected_objects = [
+                ModelMock(id=1, name='test_name'),
+                ModelMock(id=3, name='test_name'),
+            ]
 
-        if with_eq:
-            filters['eq'] = {'name': 'test_name'}
-            expected_objects.remove(ModelMock(id=2, name='unique_name'))
-            expected_objects.remove(ModelMock(id=4, name='new_name'))
+            # Testing
+            assert QSet(model_class=ModelMock).filter(name='test_name') == QSet(
+                model_class=ModelMock,
+                objects=expected_objects,  # pyright: ignore
+            )
 
-        if with_neq:
-            filters['neq'] = {'id': 1}
-            expected_objects.remove(ModelMock(id=1, name='test_name'))
+        def test_exclude(self):
+            # Prepare data
+            expected_objects = [
+                ModelMock(id=2, name='unique_name'),
+                ModelMock(id=4, name='new_name'),
+            ]
 
-        # Testing
-        assert QSet(model_class=ModelMock).filter(**filters) == QSet(
-            model_class=ModelMock,
-            objects=expected_objects,  # pyright: ignore
-        )
+            # Testing
+            assert QSet(model_class=ModelMock).exclude(name='test_name') == QSet(
+                model_class=ModelMock,
+                objects=expected_objects,  # pyright: ignore
+            )
+
+        def test_filters_with_wrong_field(self):
+            with pytest.raises(QSet.InvalidFilter, match='Invalid filter'):
+                QSet(model_class=ModelMock).filter(foo='bar')
 
     def test_get(self):
-        assert QSet(model_class=ModelMock).get(eq={'id': 1}) == ModelMock(id=1, name='test_name')
+        assert QSet(model_class=ModelMock).get(id=1) == ModelMock(id=1, name='test_name')
 
         with pytest.raises(ModelMock.DoesNotExist, match='does not exist!'):
-            QSet(model_class=ModelMock).get(eq={'id': 5})
+            QSet(model_class=ModelMock).get(id=5)
 
         with pytest.raises(ModelMock.MultipleObjectsReturned, match='returned more than 1'):
-            QSet(model_class=ModelMock).get(eq={'name': 'test_name'})
+            QSet(model_class=ModelMock).get(name='test_name')
 
     def test_count(self):
         assert (
