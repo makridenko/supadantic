@@ -1,14 +1,24 @@
+import json
 from abc import ABC, abstractmethod
-from typing import Dict, NoReturn
+from copy import copy
+from typing import Any, Dict
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
 from typing_extensions import Self
 
+from .clients import SupabaseClient
 from .q_set import QSet
-from .supabase_client import SupabaseClient
 
 
-class BaseSBModel(BaseModel, ABC):
+class ModelMetaclass(PydanticModelMetaclass):
+    def __new__(mcs, name: str, bases: Any, namespace: dict, *args, **kwargs) -> type:
+        new_model = super().__new__(mcs, name, bases, namespace, *args, **kwargs)
+        new_model.objects = QSet(new_model)
+        return new_model
+
+
+class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
     id: int | None = None
 
     class DoesNotExist(Exception):
@@ -27,14 +37,6 @@ class BaseSBModel(BaseModel, ABC):
         table_name = cls._get_table_name()
         return SupabaseClient(table_name=table_name)
 
-    @classmethod
-    def all(cls) -> QSet:
-        return QSet(model_class=cls).all()
-
-    @classmethod
-    def filter(cls: type[Self], *, eq: Dict | None = None, neq: Dict | None = None) -> QSet:
-        return QSet(model_class=cls).filter(eq=eq, neq=neq)
-
     def save(self: Self) -> Self:
         db_client = self._get_db_client()
         data = self.model_dump(exclude={'id'})
@@ -46,19 +48,31 @@ class BaseSBModel(BaseModel, ABC):
 
         return self.__class__(**response_data)
 
-    @classmethod
-    def get(cls, *, eq: Dict, neq: Dict | None = None) -> Self | NoReturn:
-        result_qs = cls.filter(eq=eq, neq=neq)
-        _filters_str = f"eq={eq}, neq={neq}"
-        if not result_qs:
-            raise cls.DoesNotExist(f'{cls.__name__} object with {_filters_str} does not exist!')
-
-        if result_qs.count() > 1:
-            raise cls.MultipleObjectsReturned(f'For {_filters_str} returned more than 1 {cls.__name__} objects!')
-
-        return result_qs.first()  # pyright: ignore
-
     def delete(self: Self) -> None:
         if self.id:
             db_client = self._get_db_client()
             db_client.delete(id=self.id)
+
+    @model_validator(mode='before')
+    def _validate_data_from_supabase(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        array_fields = []
+        result_dict = copy(data)
+
+        for key, value in cls.model_json_schema()['properties'].items():
+            _field_is_array = any(
+                (
+                    # If field is required, it's possible to get type
+                    value.get('type', None) == 'array',
+                    # If field is optional, it's possible to get type from anyOf array
+                    any(item.get('type', None) == 'array' for item in value.get('anyOf', [])),
+                )
+            )
+
+            if _field_is_array:
+                array_fields.append(key)
+
+        for key, value in data.items():
+            if key in array_fields and isinstance(value, str):
+                result_dict[key] = json.loads(data[key])
+
+        return result_dict

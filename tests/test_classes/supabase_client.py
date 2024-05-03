@@ -1,17 +1,29 @@
+from copy import copy
 from typing import Any, Dict, Iterable, List
 
+from supadantic.clients.base import BaseClient
 
-class SupabaseClientMock:
+
+class SupabaseClientMock(BaseClient):
     def __init__(self, table_name: str):
         pass
 
+    def _get_return_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        result_data = copy(data)
+
+        for key, value in data.items():
+            if type(value) in (list, tuple):
+                result_data.update({key: str(value)})
+
+        return result_data
+
     def insert(self, data: Dict[str, Any]) -> Dict[str, Any]:
         data = dict(id=1, **data)
-        return data
+        return self._get_return_data(data=data)
 
     def update(self, *, id: int, data: Dict[str, Any]) -> Dict[str, Any]:
         data['id'] = id
-        return data
+        return self._get_return_data(data=data)
 
     def select(self, *, eq: Dict[str, Any] | None = None, neq: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
         data = [
