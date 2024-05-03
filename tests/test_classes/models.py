@@ -11,9 +11,5 @@ class ModelMock(BaseSBModel):
     some_optional_tuple: Tuple[int] | None = None
 
     @classmethod
-    def _get_table_name(cls) -> str:
-        return 'test'
-
-    @classmethod
     def _get_db_client(cls) -> SupabaseClientMock:  # pyright: ignore
         return SupabaseClientMock(table_name='test')
