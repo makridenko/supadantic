@@ -44,15 +44,17 @@ users.first()
 users.last()
 
 # Filter users
-active_users = User.objects.filter(eq={'is_active': True})
+active_users = User.objects.filter(is_active=True)
+# Or
+active_users = User.objects.exclude(is_active=False)
 
 # Update all active users
 active_users.update(data={'is_active': False})
 
 # Delete all non active users
-User.objects.filter(neq={'is_active': True}).delete()
+User.objects.exclude(is_active=True).delete()
 
 # Get one user and delete
-user = User.objects.get(eq={'name': 'John Doe'})
+user = User.objects.get(name='John Doe')
 user.delete()
 ```

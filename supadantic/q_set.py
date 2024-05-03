@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, NoReturn, Type
+from typing import TYPE_CHECKING, Any, Dict, List, NoReturn, Type
 
 from typing_extensions import Self
 
@@ -10,6 +10,9 @@ if TYPE_CHECKING:
 
 class QSet:
     '''Lazy database lookup for a set of objects'''
+
+    class InvalidFilter(Exception):
+        pass
 
     def __init__(self, model_class: Type['BaseSBModel'], objects: List['BaseSBModel'] | None = None) -> None:
         self._model_class = model_class
@@ -34,30 +37,34 @@ class QSet:
         self.objects = list(self._model_class(**data) for data in response_data)
         return self._copy()
 
-    def filter(self, *, eq: Dict | None = None, neq: Dict | None = None) -> Self:
-        _filters = {}
-
-        if eq:
-            _filters['eq'] = eq
-
-        if neq:
-            _filters['neq'] = neq
-
-        response_data = self.client.select(**_filters)
+    def _select(self, eq: Dict[str, Any] | None = None, neq: Dict[str, Any] | None = None) -> Self:
+        response_data = self.client.select(eq=eq, neq=neq)
         objects = list(self._model_class(**data) for data in response_data)
         return self.__class__(model_class=self._model_class, objects=objects)
 
-    def get(self, *, eq: Dict | None = None, neq: Dict | None = None) -> 'BaseSBModel' | NoReturn:
-        result_qs = self.filter(eq=eq, neq=neq)
-        _filters_str = f'eq={eq}, neq={neq}'
+    def _validate_filters(self, **filters) -> None | NoReturn:
+        for filter_name in filters.keys():
+            if filter_name not in self._model_class.model_fields.keys():
+                raise self.InvalidFilter(f'Invalid filter {filter_name}!')
+
+    def filter(self, **filters) -> Self:
+        self._validate_filters(**filters)
+        return self._select(eq=filters)
+
+    def exclude(self, **filters) -> Self:
+        self._validate_filters(**filters)
+        return self._select(neq=filters)
+
+    def get(self, **filters) -> 'BaseSBModel' | NoReturn:
+        self._validate_filters(**filters)
+        result_qs = self._select(eq=filters)
+
         if not result_qs:
-            raise self._model_class.DoesNotExist(
-                f'{self._model_class.__name__} object with {_filters_str} does not exist!'
-            )
+            raise self._model_class.DoesNotExist(f'{self._model_class.__name__} object with {filters} does not exist!')
 
         if result_qs.count() > 1:
             raise self._model_class.MultipleObjectsReturned(
-                f'For {_filters_str} returned more than 1 {self._model_class.__name__} objects!'
+                f'For {filters} returned more than 1 {self._model_class.__name__} objects!'
             )
 
         return result_qs.first()  # pyright: ignore
