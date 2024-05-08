@@ -1,5 +1,6 @@
 import json
-from abc import ABC, abstractmethod
+import re
+from abc import ABC
 from copy import copy
 from typing import Any, Dict
 
@@ -9,6 +10,10 @@ from typing_extensions import Self
 
 from .clients import SupabaseClient
 from .q_set import QSet
+
+
+def _to_snake_case(value: str) -> str:
+    return re.sub(r'(?<!^)(?=[A-Z])', '_', value).lower()
 
 
 class ModelMetaclass(PydanticModelMetaclass):
@@ -28,9 +33,8 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         pass
 
     @classmethod
-    @abstractmethod
     def _get_table_name(cls) -> str:
-        pass
+        return _to_snake_case(cls.__name__)
 
     @classmethod
     def _get_db_client(cls) -> SupabaseClient:

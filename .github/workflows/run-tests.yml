@@ -4,6 +4,9 @@ on:
   push:
     tags-ignore:
       - '*'
+    branches:
+      - '*'
+  pull_request:
 
 jobs:
   run-tests:

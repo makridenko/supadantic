@@ -14,7 +14,8 @@ Supadantic may not have backward compatibility until version `0.1.0`. This is be
 
 ## Installation
 
-Install using `pip install -U pydantic`.
+Install using `pip install -U supadantic`.
+
 Also, you need to add `SUPABASE_URL` and `SUPABASE_KEY` to your env variables.
 
 
@@ -29,9 +30,11 @@ class User(BaseSBModel):
     name: str = 'John Doe'
     is_active: bool = True
 
+    # By default table name is class name in snake_case
+    # If you want to change it - you should implement _get_table_name method
     @classmethod
     def _get_table_name(cls) -> str:
-        return 'users'
+        return 'db_user'
 
 # Save user
 active_user = User(name='John Snow')
@@ -53,15 +56,17 @@ users.first()
 users.last()
 
 # Filter users
-active_users = User.objects.filter(eq={'is_active': True})
+active_users = User.objects.filter(is_active=True)
+# Or
+active_users = User.objects.exclude(is_active=False)
 
 # Update all active users
-active_users.update(data={'is_active': False})
+active_users.update(is_active=False)
 
 # Delete all non active users
-User.objects.filter(neq={'is_active': True}).delete()
+User.objects.exclude(is_active=True).delete()
 
 # Get one user and delete
-user = User.objects.get(eq={'name': 'John Doe'})
+user = User.objects.get(name='John Doe')
 user.delete()
 ```
