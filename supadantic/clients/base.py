@@ -3,6 +3,8 @@ from typing import Any, Dict, Iterable, List
 
 
 class BaseClient(ABC):
+    """Base client for all clients"""
+
     def __init__(self, table_name: str) -> None:
         pass
 

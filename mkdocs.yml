@@ -1,0 +1,10 @@
+site_name: Supadantic
+
+theme:
+  name: 'material'
+
+plugins:
+  - mkdocstrings
+
+nav:
+  - Overview: index.md
