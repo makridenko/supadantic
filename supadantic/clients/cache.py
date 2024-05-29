@@ -1,12 +1,14 @@
 from copy import copy
 from typing import Any, Dict, Iterable, List
 
-from supadantic.clients.base import BaseClient
+from .base import BaseClient
 
 
-class SupabaseClientMock(BaseClient):
-    def __init__(self, table_name: str):
-        pass
+class CacheClient(BaseClient):
+    def __init__(self, table_name: str) -> None:
+        super().__init__(table_name=table_name)
+
+        self._cache: Dict[int, dict] = {}
 
     def _get_return_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         result_data = copy(data)
@@ -18,39 +20,51 @@ class SupabaseClientMock(BaseClient):
         return result_data
 
     def insert(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        data = dict(id=1, **data)
-        return self._get_return_data(data=data)
+        if _ids := list(self._cache.keys()):
+            _id = _ids[-1] + 1
+        else:
+            _id = 1
+
+        data['id'] = _id
+
+        self._cache[_id] = data
+        return self._get_return_data(self._cache[_id])
 
     def update(self, *, id: int, data: Dict[str, Any]) -> Dict[str, Any]:
-        data['id'] = id
-        return self._get_return_data(data=data)
+        self._cache[id].update(data)
+        return self._get_return_data(self._cache[id])
 
     def select(self, *, eq: Dict[str, Any] | None = None, neq: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
-        data = [
-            {'id': 1, 'name': 'test_name'},
-            {'id': 2, 'name': 'unique_name'},
-            {'id': 3, 'name': 'test_name'},
-            {'id': 4, 'name': 'new_name'},
-        ]
-
-        def _filter(obj: Dict) -> bool:
+        def _filter(obj: Dict[str, Any]) -> bool:
             _eq = eq if eq else {}
             _neq = neq if neq else {}
+
             for key, value in _eq.items():
                 if not obj[key] == value:
                     return False
+
             for key, value in _neq.items():
                 if not obj[key] != value:
                     return False
+
             return True
 
-        return list(filter(_filter, data))
+        return list(filter(_filter, self._cache.values()))
 
     def delete(self, *, id: int) -> None:
-        pass
+        del self._cache[id]
 
     def bulk_update(self, *, ids: Iterable[int], data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        return list(dict(id=_id, **data) for _id in ids)
+        result = []
+        for _id in ids:
+            self._cache[_id].update(data)
+            result.append(self._cache[_id])
+
+        return result
 
     def bulk_delete(self, *, ids: Iterable[int]) -> List[Dict[str, Any]]:
-        return list(dict(id=_id) for _id in ids)
+        result = []
+        for _id in ids:
+            result.append(self._cache[_id])
+            del self._cache[_id]
+        return result

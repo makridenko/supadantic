@@ -1,10 +1,20 @@
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from typing import Any, Dict, Iterable, List
 
 
-class BaseClient(ABC):
+class SingletoneMeta(ABCMeta):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        key = (args, frozenset(kwargs.items()), cls)
+        if key not in cls._instances:
+            cls._instances[key] = super(SingletoneMeta, cls).__call__(*args, **kwargs)
+        return cls._instances[key]
+
+
+class BaseClient(ABC, metaclass=SingletoneMeta):
     def __init__(self, table_name: str) -> None:
-        pass
+        self.table_name = table_name
 
     @abstractmethod
     def insert(self, data: Dict[str, Any]) -> Dict[str, Any]:
