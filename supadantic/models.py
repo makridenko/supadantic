@@ -82,7 +82,6 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
 
         for key, value in data.items():
             if key in array_fields and isinstance(value, str):
-                print(value)
                 result_dict[key] = ast.literal_eval(value)
 
         return result_dict

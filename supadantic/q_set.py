@@ -37,7 +37,7 @@ class QSet:
     def delete(self) -> int:
         ids = tuple(obj.id for obj in self.objects)
         response_data = self.client.bulk_delete(ids=ids)  # pyright: ignore
-        self.objects = [obj for obj in self.objects if obj.id not in ids]
+        self.objects = []
         return len(response_data)
 
     def all(self) -> Self:
