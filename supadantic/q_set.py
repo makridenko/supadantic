@@ -4,7 +4,7 @@ from typing_extensions import Self
 
 
 if TYPE_CHECKING:
-    from .clients import SupabaseClient
+    from .clients.base import BaseClient
     from .models import BaseSBModel
 
 
@@ -22,7 +22,7 @@ class QSet:
         self.objects = objects if objects else []
 
     @property
-    def client(self) -> 'SupabaseClient':
+    def client(self) -> 'BaseClient':
         return self._model_class._get_db_client()
 
     def update(self, **data) -> int:
@@ -37,6 +37,7 @@ class QSet:
     def delete(self) -> int:
         ids = tuple(obj.id for obj in self.objects)
         response_data = self.client.bulk_delete(ids=ids)  # pyright: ignore
+        self.objects = []
         return len(response_data)
 
     def all(self) -> Self:

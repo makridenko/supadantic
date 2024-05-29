@@ -8,10 +8,11 @@ from .base import BaseClient
 
 class SupabaseClient(BaseClient):
     def __init__(self, table_name: str):
+        super().__init__(table_name=table_name)
         url: str = os.getenv('SUPABASE_URL') or ''
         key: str = os.getenv('SUPABASE_KEY') or ''
         supabase_client = create_client(url, key)
-        self.query = supabase_client.table(table_name=table_name)
+        self.query = supabase_client.table(table_name=self.table_name)
 
     def insert(self, data: Dict[str, Any]) -> Dict[str, Any]:
         response = self.query.insert(data).execute()

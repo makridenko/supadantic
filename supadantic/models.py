@@ -1,14 +1,15 @@
-import json
+import ast
 import re
 from abc import ABC
 from copy import copy
-from typing import Any, Dict
+from typing import Any, Dict, Type
 
 from pydantic import BaseModel, model_validator
 from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
 from typing_extensions import Self
 
 from .clients import SupabaseClient
+from .clients.base import BaseClient
 from .q_set import QSet
 
 
@@ -37,9 +38,13 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         return _to_snake_case(cls.__name__)
 
     @classmethod
-    def _get_db_client(cls) -> SupabaseClient:
+    def _get_db_client(cls) -> BaseClient:
         table_name = cls._get_table_name()
-        return SupabaseClient(table_name=table_name)
+        return cls.db_client()(table_name)
+
+    @classmethod
+    def db_client(cls) -> Type[BaseClient]:
+        return SupabaseClient
 
     def save(self: Self) -> Self:
         db_client = self._get_db_client()
@@ -77,6 +82,6 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
 
         for key, value in data.items():
             if key in array_fields and isinstance(value, str):
-                result_dict[key] = json.loads(data[key])
+                result_dict[key] = ast.literal_eval(value)
 
         return result_dict
