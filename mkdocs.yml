@@ -6,6 +6,8 @@ copyright: Maintained by <a href="https://github.com/makridenko/">Alexey Makride
 
 nav:
   - Home: index.md
+  - Source:
+    - BaseClient: base-client.md
 
 plugins:
   - search
