@@ -19,12 +19,17 @@ def _to_snake_case(value: str) -> str:
 
 class ModelMetaclass(PydanticModelMetaclass):
     def __new__(mcs, name: str, bases: Any, namespace: dict, *args, **kwargs) -> type:
+        """
+        Create a new model class with a QSet instance.
+        """
         new_model = super().__new__(mcs, name, bases, namespace, *args, **kwargs)
         new_model.objects = QSet(new_model)
         return new_model
 
 
 class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
+    """Base model for Supabase tables."""
+
     id: int | None = None
 
     class DoesNotExist(Exception):
@@ -35,18 +40,42 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
 
     @classmethod
     def _get_table_name(cls) -> str:
+        """
+        Get the table name from the class name.
+        Method converts the class name to snake case.
+
+        :return: The table name in snake case.
+        """
         return _to_snake_case(cls.__name__)
 
     @classmethod
     def _get_db_client(cls) -> BaseClient:
+        """
+        Get the database client for the model.
+
+        :return: The database client.
+        """
+
         table_name = cls._get_table_name()
         return cls.db_client()(table_name)
 
     @classmethod
     def db_client(cls) -> Type[BaseClient]:
+        """
+        Get the database client class for the model.
+        It can be overridden in the model class.
+        """
         return SupabaseClient
 
     def save(self: Self) -> Self:
+        """
+        Save the model instance to the database.
+        If the instance has an ID, it will be updated.
+        Otherwise, it will be inserted.
+
+        :return: The saved model instance.
+        """
+
         db_client = self._get_db_client()
         data = self.model_dump(exclude={'id'})
 
@@ -58,12 +87,26 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         return self.__class__(**response_data)
 
     def delete(self: Self) -> None:
+        """
+        Delete the model instance from the database if it has an ID.
+        Otherwise, do nothing.
+        """
+
         if self.id:
             db_client = self._get_db_client()
             db_client.delete(id=self.id)
 
     @model_validator(mode='before')
     def _validate_data_from_supabase(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate the data from Supabase.
+        Supabase returns arrays as strings, so we need to convert them back to arrays.
+
+        :param data: The data to validate.
+
+        :return: The validated data.
+        """
+
         array_fields = []
         result_dict = copy(data)
 
