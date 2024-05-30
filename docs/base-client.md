@@ -1,1 +1,1 @@
-::: src.clientes.base with_docstrings
+::: src.clientes.base
