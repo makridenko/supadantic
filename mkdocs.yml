@@ -1,10 +1,32 @@
 site_name: Supadantic
+repo_url: https://github.com/makridenko/supadantic
+site_url: https://makridenko.github.com/supadantic
+site_description: Supadantic is a small Python library that allows you to manage Supabase tables through Pydantic models. It is very convenient to use in projects based on FastAPI, Flask, and so on.
+copyright: Maintained by <a href="https://github.com/makridenko/">Alexey Makridenko</a>
+
+nav:
+  - Home: index.md
+
+plugins:
+  - search
+  - mkdocstrings
 
 theme:
   name: 'material'
+  feature:
+    tabs: true
+  icon:
+    repo: fontawesome/brands/github
 
-plugins:
-  - mkdocstrings
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/makridenko/supadantic
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/supadantic/
 
-nav:
-  - Overview: index.md
+markdown_extensions:
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
