@@ -44,7 +44,8 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         Get the table name from the class name.
         Method converts the class name to snake case.
 
-        :return: The table name in snake case.
+        Returns:
+            (str): The table name in snake case.
         """
         return _to_snake_case(cls.__name__)
 
@@ -53,7 +54,8 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         """
         Get the database client for the model.
 
-        :return: The database client.
+        Returns:
+            (BaseClient): The database client.
         """
 
         table_name = cls._get_table_name()
@@ -64,6 +66,9 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         """
         Get the database client class for the model.
         It can be overridden in the model class.
+
+        Returns:
+            (Type[BaseClient]): The database client class.
         """
         return SupabaseClient
 
@@ -73,7 +78,8 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         If the instance has an ID, it will be updated.
         Otherwise, it will be inserted.
 
-        :return: The saved model instance.
+        Returns:
+            (Self): The saved model instance.
         """
 
         db_client = self._get_db_client()
@@ -102,9 +108,11 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         Validate the data from Supabase.
         Supabase returns arrays as strings, so we need to convert them back to arrays.
 
-        :param data: The data to validate.
+        Args:
+            data (Dict[str, Any]): The data to validate.
 
-        :return: The validated data.
+        Returns:
+            (Dict[str, Any]): The validated data.
         """
 
         array_fields = []

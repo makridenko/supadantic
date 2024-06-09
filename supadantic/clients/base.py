@@ -32,9 +32,11 @@ class BaseClient(ABC, metaclass=SingletoneMeta):
         """
         Insert a new record into the table.
 
-        :param data: The data to insert.
+        Args:
+            data (Dict[str, Any]): The data to insert.
 
-        :return: The inserted record.
+        Returns:
+            (Dict[str, Any]): The inserted record.
         """
         raise NotImplementedError
 
@@ -43,10 +45,12 @@ class BaseClient(ABC, metaclass=SingletoneMeta):
         """
         Update a record in the table.
 
-        :param id: The ID of the record to update.
-        :param data: The data to update.
+        Args:
+            id (int): The ID of the record to update.
+            data (Dict[str, Any]): The data to update.
 
-        :return: The updated record.
+        Returns:
+            (Dict[str, Any]): The updated record.
         """
         raise NotImplementedError
 
@@ -55,10 +59,12 @@ class BaseClient(ABC, metaclass=SingletoneMeta):
         """
         Select records from the table.
 
-        :param eq: The equality filter.
-        :param neq: The non-equality filter.
+        Args:
+            eq (Dict[str, Any] | None): The equality filter.
+            neq (Dict[str, Any] | None): The non-equality filter.
 
-        :return: The selected records.
+        Returns:
+            (List[Dict[str, Any]]): The selected records.
         """
         raise NotImplementedError
 
@@ -67,7 +73,8 @@ class BaseClient(ABC, metaclass=SingletoneMeta):
         """
         Delete a record from the table.
 
-        :param id: The ID of the record to delete.
+        Args:
+            id (int): The ID of the record to delete.
         """
         raise NotImplementedError
 
@@ -76,10 +83,12 @@ class BaseClient(ABC, metaclass=SingletoneMeta):
         """
         Bulk update records in the table.
 
-        :param ids: The IDs of the records to update.
-        :param data: The data to update.
+        Args:
+            ids (Iterable[int]): The IDs of the records to update.
+            data (Dict[str, Any]): The data to update.
 
-        :return: List of updated records.
+        Returns:
+            (List[Dict[str, Any]]): List of updated records.
         """
         raise NotImplementedError
 
@@ -88,8 +97,10 @@ class BaseClient(ABC, metaclass=SingletoneMeta):
         """
         Bulk delete records from the table.
 
-        :param ids: The IDs of the records to delete.
+        Args:
+            ids (Iterable[int]): The IDs of the records to delete.
 
-        :return: List of deleted records.
+        Returns:
+            (List[Dict[str, Any]]): List of deleted records.
         """
         raise NotImplementedError

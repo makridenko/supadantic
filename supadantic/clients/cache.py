@@ -19,8 +19,11 @@ class CacheClient(BaseClient):
         Get the return data for a record.
         Supabase returns iterables as strings, so we need to convert them back.
 
-        :param data: The record data.
-        :return: The return data.
+        Args:
+            data (Dict[str, Any]): The record data.
+
+        Returns:
+            (Dict[str, Any]): The return data.
         """
         result_data = copy(data)
 
@@ -34,8 +37,11 @@ class CacheClient(BaseClient):
         """
         Insert a new record into the table.
 
-        :param data: The data to insert.
-        :return: The inserted record.
+        Args:
+            data (Dict[str, Any]): The data to insert.
+
+        Returns:
+            (Dict[str, Any]): The inserted record
         """
 
         # Get the next ID
@@ -53,10 +59,11 @@ class CacheClient(BaseClient):
         """
         Update a record in the table.
 
-        :param id: The ID of the record to update.
-        :param data: The data to update.
+        Args:
+            id (int): The ID of the record to update.
 
-        :return: The updated record.
+        Returns:
+            (Dict[str, Any]): The updated record.
         """
         self._cache[id].update(data)
         return self._get_return_data(self._cache[id])
@@ -65,10 +72,12 @@ class CacheClient(BaseClient):
         """
         Select records from the table.
 
-        :param eq: The equality filter.
-        :param neq: The non-equality filter.
+        Args:
+            eq (Dict[str, Any] | None): The equality filter.
+            neq (Dict[str, Any] | None): The non-equality filter.
 
-        :return: The selected records.
+        Returns:
+            (List[Dict[str, Any]]): The selected records.
         """
 
         def _filter(obj: Dict[str, Any]) -> bool:
@@ -92,7 +101,8 @@ class CacheClient(BaseClient):
         """
         Delete a record from the table.
 
-        :param id: The ID of the record to delete.
+        Args:
+            id (int): The ID of the record to delete.
         """
 
         del self._cache[id]
@@ -101,9 +111,12 @@ class CacheClient(BaseClient):
         """
         Bulk update records in the table.
 
-        :param ids: The IDs of the records to update.
+        Args:
+            ids (Iterable[int]): The IDs of the record to update.
+            data (Data[str, Any]): The updated data.
 
-        :param data: List of updated data.
+        Returns:
+            (List[str, Any]): The updated records.
         """
 
         result = []
@@ -117,9 +130,11 @@ class CacheClient(BaseClient):
         """
         Bulk delete records in the table.
 
-        :param ids: The IDs of the records to delete.
+        Args:
+            ids (Iterable[int]): The IDs of the records to delete.
 
-        :return: List of deleted records.
+        Returns:
+            (List[Dict[str, Any]]): The deleted records.
         """
 
         result = []
