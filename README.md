@@ -12,6 +12,10 @@ Supadantic is a small Python library that allows you to manage [Supabase](supaba
 Supadantic may not have backward compatibility until version `0.1.0`. This is because the library is still experimental and is being used in several of my other projects, where requirements are still being finalized.
 
 
+## Help
+See [documentation](https://makridenko.github.io/supadantic/) for more details.
+
+
 ## Installation
 
 Install using `pip install -U supadantic`.
