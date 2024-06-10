@@ -1,0 +1,1 @@
+::: supadantic.models.BaseSBModel
