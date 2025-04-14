@@ -1,6 +1,6 @@
-from typing import TYPE_CHECKING, Any, Dict, List, NoReturn, Type
+from typing import TYPE_CHECKING, Any, Generic, Type, TypeVar
 
-from typing_extensions import Self
+from supadantic.query_builder import QueryBuilder
 
 
 if TYPE_CHECKING:
@@ -8,236 +8,341 @@ if TYPE_CHECKING:
     from .models import BaseSBModel
 
 
-class QSet:
-    """Lazy database lookup for a set of objects."""
+_M = TypeVar('_M', bound='BaseSBModel')
+
+
+class QSet(Generic[_M]):
+    """
+    Represents a set of query operations for a specific model.
+
+    This class provides a chainable interface for building and executing database
+    queries related to a particular model. It handles filtering, updating,
+    creating, deleting, and retrieving data.  It's designed to work with a
+    `BaseClient` for interacting with the database and a `QueryBuilder` for
+    constructing queries.
+
+    Examples:
+        >>> # Get all instances of the Model class.
+        >>> all_models = Model.objects.all()
+        >>>
+        >>> # Filter for instances with name equal to "example".
+        >>> filtered_models = Model.objects.filter(name="example")
+        >>>
+        >>> # Get the last instance.
+        >>> last_model = Model.objects.last()
+    """
 
     class InvalidFilter(Exception):
+        """
+        Exception raised when attempting to update or create a record with an invalid field.
+        """
+
         pass
 
     class InvalidField(Exception):
+        """
+        Exception raised when attempting to filter with an invalid field.
+        """
+
         pass
 
-    def __init__(self, model_class: Type['BaseSBModel'], objects: List['BaseSBModel'] | None = None) -> None:
+    def __init__(
+        self,
+        model_class: Type[_M],
+        cache: list[_M] | None = None,
+        query_builder: QueryBuilder | None = None,
+    ) -> None:
         """
-        Initialize the QSet with the model class and objects.
+        Initializes the QSet with the model class, cache, and query builder.
 
         Args:
-            model_class (Type[BaseSBModel]): The model class.
-            objects (List[BaseSBModel] | None): The objects to initialize the QSet with.
+            model_class (Type[_M]): The model class associated with this QSet.
+            cache (list[_M] | None): An optional initial cache of model instances.
+            query_builder (QueryBuilder | None): An optional QueryBuilder instance.  If None, a new
+                                                 instance is created.
         """
 
         self._model_class = model_class
-        self.objects = objects if objects else []
+        self._cache = cache
+        self._query_builder = query_builder if query_builder else QueryBuilder()
 
     @property
     def client(self) -> 'BaseClient':
         """
-        Get the database client for the model.
+        Gets the database client for the model.
+
+        This method retrieves the database client associated with the model class.
+        The database client is responsible for executing the queries.
 
         Returns:
-            (BaseClient): The database client.
+            (BaseClient): The database client instance.
         """
 
         return self._model_class._get_db_client()
 
-    def update(self, **data) -> int | NoReturn:
+    def all(self) -> 'QSet[_M]':
         """
-        Update the objects in the QSet with the data.
-        If data is not valid, raise an InvalidField exception.
+        Returns a QSet containing all instances of the associated model.
+
+        This method clears any existing filters on the QSet.
+
+        Returns:
+            (QSet[_M]): A QSet containing all instances of the model.
+
+        Examples:
+            >>> qs = Model.objects.all()
+        """
+
+        return self._copy()
+
+    def filter(self, **filters: Any) -> 'QSet[_M]':
+        """
+        Returns a QSet filtered by the given keyword arguments.
+
+        Each keyword argument represents a field name and its desired value.
+        Multiple filters are combined with AND logic.
+
+        Args:
+            **filters: Keyword arguments representing the filter criteria.
+
+        Returns:
+            (QSet[_M]): A new QSet instance with the specified filters applied.
+
+        Examples:
+            >>> qs = Model.objects.filter(name='example', age=20)
+        """
+
+        self._validate_filters(**filters)
+        self._query_builder.equal = filters
+        return self._copy()
+
+    def exclude(self, **filters: Any) -> 'QSet[_M]':
+        """
+        Excludes objects based on the provided keyword arguments.
+
+        This method adds non-equality filters to the query. Only objects that do
+        not match any of the provided filters will be included in the resulting QSet.
+
+        Args:
+            **filters: Keyword arguments representing the filters to apply.
+
+        Returns:
+            A new QSet instance with the added exclusion filters.
+
+        Examples:
+            >>> qs = Model.objects.exclude(name='example', age=30)
+        """
+
+        self._validate_filters(**filters)
+        self._query_builder.not_equal = filters
+        return self._copy()
+
+    def get(self, **filters: Any) -> _M:
+        """
+        Gets a single object matching the provided filters.
+
+        This method retrieves a single object from the database that matches the
+        provided filters. If no object matches the filters, a DoesNotExist
+        exception is raised. If more than one object matches the filters, a
+        MultipleObjectsReturned exception is raised.
+
+        Args:
+            **filters: Keyword arguments representing the filters to apply.
+
+        Returns:
+            (_M): The object matching the filters.
+
+        Examples:
+            >>> qs = Model.objects.get(name='example', age=30)
+        """
+
+        self.filter(**filters)
+        self._execute()
+
+        if not self._cache:
+            raise self._model_class.DoesNotExist(f'{self._model_class.__name__} object with {filters} does not exist!')
+
+        if len(self._cache) > 1:
+            raise self._model_class.MultipleObjectsReturned(
+                f'For {filters} returned more than 1 {self._model_class.__name__} objects!'
+            )
+
+        return self.first()
+
+    def count(self) -> int:
+        """
+        Gets the number of objects matching the current query.
+
+        This method returns the number of objects in the database that match the
+        filters applied to the QSet. If the results are already cached, the
+        count is returned from the cache. Otherwise, a database query is executed.
+
+        Returns:
+            The number of objects matching the query.
+
+        Examples:
+            >>> count = Model.objects.filter(name='example').count()
+        """
+
+        if self._cache is not None:
+            return len(self._cache)
+
+        self._query_builder.count_mode = True
+        return self.client.execute(query_builder=self._query_builder)
+
+    def first(self) -> _M | None:
+        """
+        Gets the first object matching the current query.
+
+        This method returns the first object in the QSet. If the QSet is empty,
+        this method returns None.
+
+        Returns:
+            The first object in the QSet, or None if the QSet is empty.
+
+        Examples:
+            >>> obj = Model.objects.filter(name='example').first()
+        """
+
+        try:
+            return self[0]
+        except IndexError:
+            return None
+
+    def last(self) -> _M | None:
+        """
+        Returns the last object in the QSet.
+
+        If the QSet is empty, returns None. This method executes the query to
+        populate the cache before retrieving the last element.
+
+        Returns:
+            The last object in the QSet, or None if the QSet is empty.
+
+        Examples:
+            >>> obj = Model.objects.all().last()
+        """
+
+        try:
+            return self[-1]
+        except IndexError:
+            return None
+
+    def update(self, **data: Any) -> int:
+        """
+        Updates the objects in the QSet with the provided data.
+
+        This method sets the `update_data` attribute on the QueryBuilder and executes
+        the query. It returns the number of objects that were updated.
+
+        Args:
+            **data: Keyword arguments representing the fields to update and their new values.
 
         Returns:
             (int): The number of objects updated.
 
-        Raises:
-            (InvalidField): If the field is not valid.
-
         Examples:
-            >>> qs = Model.objects.update(name='new_name')
+            >>> num_updated = Model.objects.filter(active=True).update(name='new_name')
         """
 
         for field in data.keys():
             if field not in self._model_class.model_fields.keys():
                 raise self.InvalidField(f'Invalid field {field}!')
 
-        ids = tuple(obj.id for obj in self.objects)
-        response_data = self.client.bulk_update(ids=ids, data=data)  # pyright: ignore
-        return len(response_data)
+        self._query_builder.update_data = data
+        self._execute()
+        return len(self._cache)
+
+    # TODO: deal with typing
+    def create(self, **data) -> _M:
+        """
+        Creates a new instance of the model in the database.
+
+        This method sets the `insert_data` attribute on the QueryBuilder and executes
+        the query. It returns a new model instance populated with the data from the
+        database after the insert operation.
+
+        Args:
+            **data (dict[str, Any]): Keyword arguments representing the fields and their values for the new instance.
+
+        Returns:
+            (_M): The newly created model instance.
+        """
+
+        for field in data.keys():
+            if field not in self._model_class.model_fields.keys():
+                raise self.InvalidField(f'Invalid field {field}!')
+
+        self._query_builder.insert_data = data
+        response_data = self.client.execute(query_builder=self._query_builder)[0]
+        return self._model_class(**response_data)
 
     def delete(self) -> int:
         """
-        Delete the objects in the QSet.
+        Deletes the objects in the QSet from the database.
+
+        This method sets the `delete_mode` attribute on the QueryBuilder and executes
+        the query. It returns the number of objects that were deleted.
 
         Returns:
             (int): The number of objects deleted.
 
         Examples:
-            >>> Model.objects.filter(name='name').delete()
+            >>> num_deleted = Model.objects.filter(active=False).delete()
         """
 
-        ids = tuple(obj.id for obj in self.objects)
-        response_data = self.client.bulk_delete(ids=ids)  # pyright: ignore
-        self.objects = []
-        return len(response_data)
+        self._query_builder.delete_mode = True
+        self._execute()
+        return len(self._cache)
 
-    def all(self) -> Self:
+    def _validate_filters(self, **filters) -> None:
         """
-        Get all objects from the database.
+        Validates the filter names against the model's fields.
 
-        Returns:
-            (Self): The QSet with all objects.
-
-        Examples:
-            >>> qs = Model.objects.all()
-        """
-
-        response_data = self.client.select()
-        self.objects = list(self._model_class(**data) for data in response_data)
-        return self._copy()
-
-    def _select(self, eq: Dict[str, Any] | None = None, neq: Dict[str, Any] | None = None) -> Self:
-        """
-        Select objects from the database with the equality and non-equality filters.
+        Raises the InvalidFilter exception if a filter name is not a valid field on the model.
 
         Args:
-            eq (Dict[str, Any] | None): The equality filter.
-            neq (Dict[str, Any] | None): The non-equality filter.
-
-        Returns:
-            (Self): The QSet with the selected objects.
+            **filters: Keyword arguments representing the filter criteria.
         """
 
-        response_data = self.client.select(eq=eq, neq=neq)
-        objects = list(self._model_class(**data) for data in response_data)
-        return self.__class__(model_class=self._model_class, objects=objects)
-
-    def _validate_filters(self, **filters) -> None | NoReturn:
-        """
-        Validate the filters.
-        If a filter is not valid, raise an InvalidFilter exception.
-
-        Raises:
-            (InvalidFilter): If a filter is not valid.
-        """
         for filter_name in filters.keys():
             if filter_name not in self._model_class.model_fields.keys():
                 raise self.InvalidFilter(f'Invalid filter {filter_name}!')
 
-    def filter(self, **filters) -> Self:
+    def _copy(self) -> 'QSet[_M]':
         """
-        Filter objects from the database with the filters.
+        Creates a copy of the QSet.
+
+        This method creates a new QSet instance with the same model class, cache,
+        and query builder as the original.
 
         Returns:
-            (Self): The QSet with the filtered objects.
+            (QSet[_M]): A new QSet instance that is a copy of the original.
+        """
+        return self.__class__(model_class=self._model_class, cache=self._cache, query_builder=self._query_builder)
 
-        Examples:
-            >>> qs = Model.objects.filter(name='name')
+    def _execute(self) -> None:
+        """
+        Executes the query and populates the cache with the results.
+
+        This method uses the database client to execute the query built by the
+        QueryBuilder and populates the `_cache` attribute with model instances
+        created from the response data.
         """
 
-        self._validate_filters(**filters)
-        return self._select(eq=filters)
-
-    def exclude(self, **filters) -> Self:
-        """
-        Exclude objects from the database with the filters.
-
-        Returns:
-            (Self): The QSet with the excluded objects.
-
-        Examples:
-            >>> qs = Model.objects.exclude(name='name')
-        """
-
-        self._validate_filters(**filters)
-        return self._select(neq=filters)
-
-    def get(self, **filters) -> 'BaseSBModel' | NoReturn:
-        """
-        Get an object from the database with the filters.
-        If the object does not exist, raise a DoesNotExist exception.
-        If more than one object exists, raise a MultipleObjectsReturned exception.
-
-        Returns:
-            (BaseSBModel): The object.
-
-        Raises:
-            (DoesNotExist): If the object does not exist or more than one object exists.
-
-        Examples:
-            >>> obj = Model.objects.get(name='name')
-        """
-
-        self._validate_filters(**filters)
-        result_qs = self._select(eq=filters)
-
-        if not result_qs:
-            raise self._model_class.DoesNotExist(f'{self._model_class.__name__} object with {filters} does not exist!')
-
-        if result_qs.count() > 1:
-            raise self._model_class.MultipleObjectsReturned(
-                f'For {filters} returned more than 1 {self._model_class.__name__} objects!'
-            )
-
-        return result_qs.first()  # pyright: ignore
-
-    def count(self) -> int:
-        """
-        Get the number of objects in the QSet.
-
-        Returns:
-            (int): The number of objects in the QSet.
-
-        Examples:
-            >>> count = Model.objects.count()
-        """
-
-        return len(self.objects)
-
-    def first(self) -> 'BaseSBModel | None':
-        """
-        Get the first object in the QSet.
-        If the QSet is empty, return None.
-
-        Returns:
-            (BaseSBModel | None): The first object in the QSet.
-
-        Examples:
-            >>> first_obj = Model.objects.all().first()
-        """
-
-        if self.count():
-            return self[0]
-
-    def last(self) -> 'BaseSBModel | None':
-        """
-        Get the last object in the QSet.
-        If the QSet is empty, return None.
-
-        Returns:
-            (BaseSBModel | None): The last object in the QSet.
-
-        Examples:
-            >>> last_obj = Model.objects.all().last()
-        """
-
-        if self.count():
-            return self[-1]
-
-    def _copy(self) -> Self:
-        """
-        Copy the QSet.
-
-        Returns:
-            (Self): The copied QSet.
-        """
-        return self.__class__(model_class=self._model_class, objects=self.objects)
+        response_data = self.client.execute(query_builder=self._query_builder)
+        self._cache = list(self._model_class(**data) for data in response_data)
 
     def __iter__(self):
-        return iter(self.objects)
+        self._execute()
+        return iter(self._cache)
 
     def __len__(self) -> int:
-        return len(self.objects)
+        self._execute()
+        return len(self._cache)
 
-    def __getitem__(self, index: int) -> 'BaseSBModel':
+    def __getitem__(self, index: int) -> _M:
+        self._execute()
         return list(self)[index]
 
     def __repr__(self) -> str:
@@ -247,6 +352,6 @@ class QSet:
         return all(
             (
                 self._model_class == getattr(obj, '_model_class'),
-                self.objects == getattr(obj, 'objects'),
+                self._cache == getattr(obj, '_cache'),
             )
         )
