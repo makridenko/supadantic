@@ -2,6 +2,7 @@
 
 ## Upcoming features (`master`)
 
+- Fix supabase link in README.md file ([#42](https://github.com/makridenko/supadantic/issues/42))
 - Optimization fix ([#20](https://github.com/makridenko/supadantic/issues/20))
 - Typing fix ([#34](https://github.com/makridenko/supadantic/issues/34))
 
