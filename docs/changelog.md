@@ -2,7 +2,7 @@
 
 ## Upcoming features (`master`)
 
-
+- Fix supabase link in README.md file ([#42](https://github.com/makridenko/supadantic/issues/42))
 
 ## v0.0.5
 
