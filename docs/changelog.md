@@ -2,7 +2,8 @@
 
 ## Upcoming features (`master`)
 
-
+- Optimization fix ([#20](https://github.com/makridenko/supadantic/issues/20))
+- Typing fix ([#34](https://github.com/makridenko/supadantic/issues/34))
 
 ## v0.0.5
 
