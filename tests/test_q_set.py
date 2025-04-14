@@ -1,12 +1,9 @@
-from typing import TYPE_CHECKING, Type
+from typing import Type
 
 import pytest
 
 from supadantic.q_set import QSet
-
-
-if TYPE_CHECKING:
-    from tests.fixtures.model import ModelMock
+from tests.fixtures.model import ModelMock
 
 
 class TestQSet:
@@ -16,23 +13,11 @@ class TestQSet:
         for name in names:
             model_mock(name=name).save()
 
-    class TestUpdate:
-        def test(self, model_mock: Type['ModelMock']):
-            assert model_mock.objects.filter(name='test_name').update(name='_test_name') == 2  # pyright: ignore
-
-        def test_with_invalid_field(self, model_mock: Type['ModelMock']):
-            with pytest.raises(QSet.InvalidField, match='Invalid field'):
-                model_mock.objects.filter(name='name').update(foo='bar')  # pyright: ignore
-
-    def test_delete(self, model_mock: Type['ModelMock']):
-        assert model_mock.objects.all().delete() == 4  # pyright: ignore
-        assert not model_mock.objects.all()  # pyright: ignore
-
     def test_all(self, model_mock: Type['ModelMock']):
         # Prepare data
         expected_q_set = QSet(
             model_class=model_mock,
-            objects=[
+            cache=[
                 model_mock(id=1, name='test_name'),
                 model_mock(id=2, name='unique_name'),
                 model_mock(id=3, name='test_name'),
@@ -41,76 +26,100 @@ class TestQSet:
         )
 
         # Execution
-        actual_q_set = model_mock.objects.all()  # pyright: ignore
+        actual_q_set = model_mock.objects.all()
+        actual_q_set._execute()
 
         # Testing
         assert actual_q_set == expected_q_set
 
-    class TestFilters:
-        def test_filter(self, model_mock: Type['ModelMock']):
-            # Prepare data
-            expected_q_set = QSet(
-                model_class=model_mock,
-                objects=[
-                    model_mock(id=1, name='test_name'),
-                    model_mock(id=3, name='test_name'),
-                ],
-            )
+    def test_filter(self, model_mock: Type['ModelMock']):
+        # Prepare data
+        expected_q_set = QSet(
+            model_class=model_mock,
+            cache=[
+                model_mock(id=1, name='test_name'),
+                model_mock(id=3, name='test_name'),
+            ],
+        )
 
-            # Execution
-            actual_q_set = model_mock.objects.filter(name='test_name')  # pyright: ignore
+        # Execution
+        actual_q_set = model_mock.objects.filter(name='test_name')
+        actual_q_set._execute()
 
-            # Testing
-            assert actual_q_set == expected_q_set
+        # Testing
+        assert actual_q_set == expected_q_set
 
-        def test_exclude(self, model_mock: Type['ModelMock']):
-            # Prepare data
-            expected_q_set = QSet(
-                model_class=model_mock,
-                objects=[
-                    model_mock(id=2, name='unique_name'),
-                    model_mock(id=4, name='new_name'),
-                ],
-            )
+    def test_exclude(self, model_mock: Type['ModelMock']):
+        # Prepare data
+        expected_q_set = QSet(
+            model_class=model_mock,
+            cache=[
+                model_mock(id=2, name='unique_name'),
+                model_mock(id=4, name='new_name'),
+            ],
+        )
 
-            # Execution
-            actual_q_set = model_mock.objects.exclude(name='test_name')  # pyright: ignore
+        # Execution
+        actual_q_set = model_mock.objects.exclude(name='test_name')
+        actual_q_set._execute()
 
-            # Testing
-            assert actual_q_set == expected_q_set
+        # Testing
+        assert actual_q_set == expected_q_set
 
-        def test_filters_with_wrong_field(self, model_mock: Type['ModelMock']):
-            with pytest.raises(QSet.InvalidFilter, match='Invalid filter'):
-                model_mock.objects.filter(foo='bar')  # pyright: ignore
+    def test_filters_with_wrong_field(self, model_mock: Type['ModelMock']):
+        with pytest.raises(QSet.InvalidFilter, match='Invalid filter'):
+            model_mock.objects.filter(foo='bar')
 
     def test_get(self, model_mock: Type['ModelMock']):
-        assert model_mock.objects.get(id=1) == model_mock(id=1, name='test_name')  # pyright: ignore
+        assert model_mock.objects.get(id=1) == model_mock(id=1, name='test_name')
 
         with pytest.raises(model_mock.DoesNotExist, match='does not exist!'):
-            model_mock.objects.get(id=5)  # pyright: ignore
+            model_mock.objects.get(id=5)
 
         with pytest.raises(model_mock.MultipleObjectsReturned, match='returned more than 1'):
-            model_mock.objects.get(name='test_name')  # pyright: ignore
+            model_mock.objects.get(name='test_name')
 
     def test_count(self, model_mock: Type['ModelMock']):
-        model_mock.objects.count() == 4  # pyright: ignore
+        model_mock.objects.count() == 4
+        model_mock.objects.filter(name='unique_name').count() == 1
+        model_mock.objects.filter(name='foo').count() == 0
 
     def test_first(self, model_mock: Type['ModelMock']):
-        assert model_mock.objects.all().first() == model_mock(id=1, name='test_name')  # pyright: ignore
+        assert model_mock.objects.all().first() == model_mock(id=1, name='test_name')
+        assert model_mock.objects.filter(name='foo').first() is None
 
     def test_last(self, model_mock: Type['ModelMock']):
-        assert model_mock.objects.all().last() == model_mock(id=4, name='new_name')  # pyright: ignore
+        assert model_mock.objects.all().last() == model_mock(id=4, name='new_name')
+        assert model_mock.objects.filter(name='foo').last() is None
+
+    def test_update(self, model_mock: Type['ModelMock']):
+        assert model_mock.objects.filter(name='test_name').update(name='_test_name') == 2
+
+    def test_update_with_invalid_field(self, model_mock: Type['ModelMock']):
+        with pytest.raises(QSet.InvalidField, match='Invalid field'):
+            model_mock.objects.filter(name='name').update(foo='bar')
+
+    def test_create(self, model_mock: Type['ModelMock']):
+        assert model_mock.objects.create(name='new_name') == model_mock(id=5, name='new_name')
+
+    def test_create_with_invalid_field(self, model_mock: Type['ModelMock']):
+        with pytest.raises(QSet.InvalidField, match='Invalid field'):
+            model_mock.objects.create(foo='bar')
+
+    def test_delete(self, model_mock: Type['ModelMock']):
+        assert model_mock.objects.all().delete() == 4
+        assert not model_mock.objects.all()
 
     def test_copy(self, model_mock: Type['ModelMock']):
         assert QSet(
             model_class=model_mock,
-            objects=[
+            cache=[
                 model_mock(id=1, name='first'),
                 model_mock(id=2, name='second'),
             ],
         )._copy() == QSet(
             model_class=model_mock,
-            objects=[
+            cache=[
                 model_mock(id=1, name='first'),
                 model_mock(id=2, name='second'),
             ],

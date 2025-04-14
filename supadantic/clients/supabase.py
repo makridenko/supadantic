@@ -1,18 +1,36 @@
 import os
-from typing import Any, Dict, Iterable, List
+from typing import TYPE_CHECKING, Any, Literal
 
 from supabase.client import create_client
+
+from supadantic.query_builder import QueryBuilder
 
 from .base import BaseClient
 
 
+if TYPE_CHECKING:
+    from postgrest._sync.request_builder import SyncSelectRequestBuilder
+    from postgrest.base_request_builder import BaseFilterRequestBuilder
+
+
 class SupabaseClient(BaseClient):
-    """Client for Supabase."""
+    """
+    Client for interacting with a Supabase database.
+
+    This client provides methods for performing common database operations
+    using the Supabase client library.
+    It inherits from `BaseClient` and implements the abstract methods defined there.
+
+    This client relies on environment variables `SUPABASE_URL` and `SUPABASE_KEY`
+    to initialize the Supabase client.
+    """
 
     def __init__(self, table_name: str):
         """
-        Initialize the client with the table name.
-        It creates a Supabase client and a query object.
+        Initializes the Supabase client and sets up the query object.
+
+        Args:
+            table_name (str): The name of the table to interact with.
         """
 
         super().__init__(table_name=table_name)
@@ -21,95 +39,131 @@ class SupabaseClient(BaseClient):
         supabase_client = create_client(url, key)
         self.query = supabase_client.table(table_name=self.table_name)
 
-    def insert(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _delete(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
         """
-        Insert a new record into the table.
+        Deletes records from the Supabase table based on the filter criteria in the query builder.
 
         Args:
-            data (Dict[str, Any]): The data to insert.
+            query_builder (QueryBuilder): The QueryBuilder instance specifying the deletion criteria.
 
         Returns:
-            (Dict[str, Any]): The inserted record.
+            (list[dict[str, Any]]): A list of dictionaries representing the deleted records.
         """
 
-        response = self.query.insert(data).execute()
-        return response.data[0]
-
-    def update(self, *, id: int, data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Update a record in the table.
-
-        Args:
-            id (int): The ID of the record to update.
-            data (Dict[str, Any]): The data to update.
-
-        Returns:
-            (Dict[str, Any]): The updated record.
-        """
-
-        response = self.query.update(data).eq('id', id).execute()
-        return response.data[0]
-
-    def select(self, *, eq: Dict[str, Any] | None = None, neq: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
-        """
-        Select records from the table.
-
-        Args:
-            eq (Dict[str, Any] | None): The equality filter.
-            neq (Dict[str, Any] | None): The non-equality filter.
-
-        Returns:
-            (List[Dict[str, Any]]): The selected records.
-        """
-
-        _query = self.query.select('*')
-
-        if eq:
-            for eq_filter in list(eq.items()):
-                _query = _query.eq(*eq_filter)
-
-        if neq:
-            for neq_filter in list(neq.items()):
-                _query = _query.neq(*neq_filter)
-
-        response = _query.execute()
+        self.query = self.query.delete()
+        self.query = self._add_filters(query_builder=query_builder)
+        response = self.query.execute()
         return response.data
 
-    def delete(self, *, id: int) -> None:
+    def _insert(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
         """
-        Delete a record from the table.
+        Inserts a new record into the Supabase table.
 
         Args:
-            id (int): The ID of the record to delete.
-        """
-
-        self.query.delete().eq('id', id).execute()
-
-    def bulk_update(self, *, ids: Iterable[int], data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Bulk update records in the table.
-
-        Args:
-            ids (Iterable[int]): The IDs of the records to update.
-            data (Dict[str, Any]): The data to update.
+            query_builder (QueryBuilder): The QueryBuilder instance containing the data to insert.
+                           The data is expected to be in the `insert_data` attribute of the QueryBuilder.
 
         Returns:
-            (List[Dict[str, Any]]): List of updated records.
+            (list[dict[str, Any]]): A list of dictionaries representing the inserted records.
         """
 
-        response = self.query.update(data).in_('id', ids).execute()
+        self.query = self.query.insert(query_builder.insert_data)
+        response = self.query.execute()
         return response.data
 
-    def bulk_delete(self, *, ids: Iterable[int]) -> List[Dict[str, Any]]:
+    def _update(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
         """
-        Bulk delete records from the table.
+        Updates records in the Supabase table based on the filter criteria in the query builder.
 
         Args:
-            ids (Iterable[int]): The IDs of the records to delete.
+            query_builder (QueryBuilder): The QueryBuilder instance containing the update criteria
+                                          and the data to update. The data is expected to be in the
+                                          `update_data` attribute of the QueryBuilder.
 
         Returns:
-            (List[Dict[str, Any]]): List of deleted records.
+            (list[dict[str, Any]]): A list of dictionaries representing the updated records.
         """
 
-        response = self.query.delete().in_('id', ids).execute()
+        self.query = self.query.update(query_builder.update_data)
+        self.query = self._add_filters(query_builder=query_builder)
+        response = self.query.execute()
         return response.data
+
+    def _filter(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
+        """
+        Filters records from the Supabase table based on the filter criteria in the query builder.
+
+        Args:
+            query_builder (QueryBuilder): The QueryBuilder instance specifying the filter criteria.
+
+        Returns:
+            (list[dict[str, Any]]): A list of dictionaries representing the filtered records.
+        """
+
+        self.query = self._select(query_builder=query_builder)
+        self.query = self._add_filters(query_builder=query_builder)
+        response = self.query.execute()
+        return response.data
+
+    def _count(self, *, query_builder: 'QueryBuilder') -> int:
+        """
+        Counts the number of records in the Supabase table that match the filter criteria in the query builder.
+
+        Args:
+            query_builder (QueryBuilder): The QueryBuilder instance specifying the filter criteria.
+
+        Returns:
+            (int): The number of records matching the filter criteria.
+        """
+
+        self.query = self._select(query_builder=query_builder, count='exact')
+        self.query = self._add_filters(query_builder=query_builder)
+        response = self.query.execute()
+        return response.count
+
+    def _select(
+        self, *, query_builder: 'QueryBuilder', count: Literal['exact'] | None = None
+    ) -> 'SyncSelectRequestBuilder':
+        """
+        Builds the select query based on the query builder and count option.
+
+        Args:
+            query_builder (QueryBuilder): The QueryBuilder instance specifying the select fields.
+            count: The count option, which can be 'exact' or None.
+
+        Returns:
+            (SyncSelectRequestBuilder): A SyncSelectRequestBuilder instance representing the select query.
+        """
+
+        if count == 'exact':
+            _query = self.query.select(*query_builder.select_fields, count=count)
+        else:
+            _query = self.query.select(*query_builder.select_fields)
+        return _query
+
+    def _add_filters(self, *, query_builder: 'QueryBuilder') -> 'BaseFilterRequestBuilder':
+        """
+        Adds equality and non-equality filters to the query based on the query builder.
+
+        Args:
+            query_builder (QueryBuilder): The QueryBuilder instance specifying
+                                          the filter criteria. The filter criteria are
+                                          expected to be in the `equal` and `not_equal` attributes of the QueryBuilder.
+
+        Returns:
+            (BaseFilterRequestBuilder): A BaseFilterRequestBuilder instance representing
+                                        the query with the added filters.
+        """
+
+        _query = self.query
+
+        equal = query_builder.equal
+        not_equal = query_builder.not_equal
+
+        for equal_filter in equal:
+            _query = _query.eq(*equal_filter)
+
+        for not_equal_filter in not_equal:
+            _query = _query.neq(*not_equal_filter)
+
+        return _query

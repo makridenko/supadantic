@@ -10,9 +10,7 @@ nav:
     - Changelog: changelog.md
   - API Documentation:
     - Clients:
-      - Base:
-        - SingletoneMeta: clients/base/singletone_meta.md
-        - BaseClient: clients/base/base.md
+      - BaseClient: clients/base.md
       - CacheClient: clients/cache.md
       - SupabaseClient: clients/supabase.md
     - Models:
@@ -20,6 +18,7 @@ nav:
         - ModelMetaclass: models/model_metaclass.md
         - BaseSBModel: models/base_sb_model.md
     - QSet: q_set.md
+    - QueryBuilder: query_builder.md
 
 plugins:
   - search
@@ -30,7 +29,7 @@ plugins:
             docstring_style: google
             show_doctring_examples: true
             merge_init_into_class: true
-            show_source: false
+            show_source: true
             docstring_options:
               ignore_init_summary: true
             separate_signature: true

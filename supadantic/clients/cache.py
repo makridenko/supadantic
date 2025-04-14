@@ -1,144 +1,236 @@
 from copy import copy
-from typing import Any, Dict, Iterable, List
+from typing import TYPE_CHECKING, Any, Iterable
 
-from .base import BaseClient
+from .base import BaseClient, BaseClientMeta
 
 
-class CacheClient(BaseClient):
-    """Client for caching data in memory."""
+if TYPE_CHECKING:
+    from supadantic.query_builder import QueryBuilder
+
+
+class SingletoneMeta(BaseClientMeta):
+    """
+    Metaclass implementing the Singleton pattern.
+
+    This metaclass ensures that only one instance of a class (and its subclasses)
+    exists for a given set of initialization arguments (table_name and class).
+    It utilizes a dictionary to store instances, keyed by a tuple of the initialization arguments,
+    frozen set of keyword arguments and the class itself.
+
+    In other words, it's possible to have only one instance with specific table name and child class.
+    """
+
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        """
+        Returns the existing instance if it exists; otherwise, creates and returns a new one.
+
+        This method intercepts the class instantiation process (`cls(...)`) and checks
+        if an instance with the given initialization arguments already exists. If so,
+        it returns the existing instance. Otherwise, it creates a new instance using
+        the `super()` call and stores it in the `_instances` dictionary.
+        """
+
+        key = (args, frozenset(kwargs.items()), cls)
+        if key not in cls._instances:
+            cls._instances[key] = super(SingletoneMeta, cls).__call__(*args, **kwargs)
+        return cls._instances[key]
+
+
+class CacheClient(BaseClient, metaclass=SingletoneMeta):
+    """
+    Client for caching data in memory, using the Singleton pattern.
+
+    This client stores data in a simple in-memory dictionary (`_cache_data`).
+    It implements the `BaseClient` interface for common database operations,
+    simulating database interactions by operating on the in-memory cache.
+
+    This class is designed for testing.
+    It is NOT suitable for production environments.
+    """
 
     def __init__(self, table_name: str) -> None:
-        """Initialize the client with the table name."""
+        """
+        Initializes the client with the table name and an empty cache.
+
+        Args:
+            table_name (str): The name of the table associated with the cache.
+                         While the table name isn't directly used for in-memory
+                         operations, it's stored for consistency with the
+                         `BaseClient` interface and may be used in future
+                         extensions of this class.
+        """
         super().__init__(table_name=table_name)
 
-        # The cache of records
-        self._cache: Dict[int, dict] = {}
+        self._cache_data: dict[int, dict[str, Any]] = {}
 
-    def _get_return_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _delete(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
         """
-        Get the return data for a record.
-        Supabase returns iterables as strings, so we need to convert them back.
+        Deletes records from the cache that match the query builder's filter criteria.
+
+        This method first filters the cache to identify records that match the
+        deletion criteria. Then, it removes those records from the cache.
 
         Args:
-            data (Dict[str, Any]): The record data.
+            query_builder (QueryBuilder): The QueryBuilder instance specifying the deletion criteria.
 
         Returns:
-            (Dict[str, Any]): The return data.
+            (list[dict[str, Any]]): A list of the deleted records. The records are returned *before* they are
+            deleted from the cache. This allows for auditing or other post-deletion
+            operations.
         """
-        result_data = copy(data)
 
-        for key, value in data.items():
-            if type(value) in (list, tuple):
-                result_data.update({key: str(value)})
+        filtered_data = self._filter(query_builder=query_builder)
+        ids = [data['id'] for data in filtered_data]
 
-        return result_data
+        result = []
+        for _id in ids:
+            result.append(self._cache_data.pop(_id))
 
-    def insert(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return self._get_return_data(objects=result)
+
+    def _insert(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
         """
-        Insert a new record into the table.
+        Inserts a new record into the cache.
+
+        A new ID is generated for the record (incrementing from the highest existing ID).
+        The data to insert is taken from the `query_builder.insert_data` attribute.
 
         Args:
-            data (Dict[str, Any]): The data to insert.
+            query_builder (QueryBuilder): The QueryBuilder instance containing the data to insert.
+                           The data is expected to be in the `insert_data` attribute
+                           of the QueryBuilder.
 
         Returns:
-            (Dict[str, Any]): The inserted record
+            (list[dict[str, Any]]): A list containing the newly inserted record.  The record will have an 'id'
+            field automatically assigned.
         """
 
-        # Get the next ID
-        if _ids := list(self._cache.keys()):
+        if _ids := list(self._cache_data.keys()):
             _id = _ids[-1] + 1
         else:
             _id = 1
 
-        data['id'] = _id
+        self._cache_data[_id] = {'id': _id, **query_builder.insert_data}
+        return [self._convert_obj(obj=self._cache_data[_id])]
 
-        self._cache[_id] = data
-        return self._get_return_data(self._cache[_id])
-
-    def update(self, *, id: int, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _update(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
         """
-        Update a record in the table.
+        Updates records in the cache that match the query builder's filter criteria.
+
+        This method filters the cache to identify records to update and then
+        applies the update data from `query_builder.update_data` to those records.
 
         Args:
-            id (int): The ID of the record to update.
+            query_builder (QueryBuilder): The QueryBuilder instance containing the update criteria
+                           and the data to update. The data is expected to be in
+                           the `update_data` attribute of the QueryBuilder.
 
         Returns:
-            (Dict[str, Any]): The updated record.
+            A list of the updated records. The list contains *copies* of the records
+            *after* the update is applied.
         """
-        self._cache[id].update(data)
-        return self._get_return_data(self._cache[id])
 
-    def select(self, *, eq: Dict[str, Any] | None = None, neq: Dict[str, Any] | None = None) -> List[Dict[str, Any]]:
+        filtered_data = self._filter(query_builder=query_builder)
+
+        result = []
+        for _id in [data['id'] for data in filtered_data]:
+            self._cache_data[_id].update(query_builder.update_data)
+            result.append(self._cache_data[_id])
+
+        return self._get_return_data(objects=result)
+
+    def _filter(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
         """
-        Select records from the table.
+        Filters records in the cache based on equality and non-equality filters specified
+        in the QueryBuilder.
+
+        This method supports filtering based on equality and non-equality. The filters
+        are applied as a chain of AND conditions. It provides a basic example of
+        filtering logic and can be extended with other filtering conditions as needed.
 
         Args:
-            eq (Dict[str, Any] | None): The equality filter.
-            neq (Dict[str, Any] | None): The non-equality filter.
+            query_builder (QueryBuilder): The QueryBuilder instance containing the filter criteria.
+                           The filter criteria are expected to be in the `equal` and
+                           `not_equal` attributes of the QueryBuilder. These attributes
+                           are expected to be dictionaries mapping field names to values.
 
         Returns:
-            (List[Dict[str, Any]]): The selected records.
+            (list[dict[str, Any]]): A list of records that match the filter criteria.  The records in the
+            list are converted to return data using the `_get_return_data` method.
         """
+        equal_filters = {key: value for key, value in query_builder.equal}
+        not_equal_filters = {key: value for key, value in query_builder.not_equal}
 
-        def _filter(obj: Dict[str, Any]) -> bool:
+        def _lambda_filter(obj: dict[str, Any]) -> bool:
             """Filter the records based on the equality and non-equality filters."""
-            _eq = eq if eq else {}
-            _neq = neq if neq else {}
-
-            for key, value in _eq.items():
+            for key, value in equal_filters.items():
                 if not obj[key] == value:
                     return False
 
-            for key, value in _neq.items():
+            for key, value in not_equal_filters.items():
                 if not obj[key] != value:
                     return False
 
             return True
 
-        return list(filter(_filter, self._cache.values()))
+        result = filter(_lambda_filter, self._cache_data.values())
+        return self._get_return_data(objects=result)
 
-    def delete(self, *, id: int) -> None:
+    def _count(self, *, query_builder: 'QueryBuilder') -> int:
         """
-        Delete a record from the table.
+        Counts the number of records in the cache that match the query builder's
+        filter criteria.
+
+        This method uses the `_filter` method to identify records that match the
+        filter criteria and then returns the number of those records.
 
         Args:
-            id (int): The ID of the record to delete.
-        """
-
-        del self._cache[id]
-
-    def bulk_update(self, *, ids: Iterable[int], data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Bulk update records in the table.
-
-        Args:
-            ids (Iterable[int]): The IDs of the record to update.
-            data (Data[str, Any]): The updated data.
+            query_builder (QueryBuilder): The QueryBuilder instance specifying the filter criteria.
 
         Returns:
-            (List[str, Any]): The updated records.
+            (int): The number of records matching the filter criteria.
         """
 
-        result = []
-        for _id in ids:
-            self._cache[_id].update(data)
-            result.append(self._cache[_id])
+        return len(self._filter(query_builder=query_builder))
 
-        return result
-
-    def bulk_delete(self, *, ids: Iterable[int]) -> List[Dict[str, Any]]:
+    def _convert_obj(self, *, obj: dict[str, Any]) -> dict[str, Any]:
         """
-        Bulk delete records in the table.
+        Converts a record's data to a format suitable for returning to the client.
+
+        This method simulates the behavior of Supabase, which returns iterables as strings.
+        It converts any list or tuple values in the record to strings. This conversion
+        is performed to maintain consistency with the Supabase API.
 
         Args:
-            ids (Iterable[int]): The IDs of the records to delete.
+            obj (dict[str, Any]): The record data.
 
         Returns:
-            (List[Dict[str, Any]]): The deleted records.
+            (dict[str, Any]): A copy of the record data with iterables converted to strings. The
+            original record data is not modified.
         """
 
-        result = []
-        for _id in ids:
-            result.append(self._cache[_id])
-            del self._cache[_id]
-        return result
+        result_data = copy(obj)
+
+        for key, value in obj.items():
+            if type(value) in (list, tuple):
+                result_data.update({key: str(value)})
+
+        return result_data
+
+    def _get_return_data(self, *, objects: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+        """
+        Applies the `_convert_obj` method to each record in an iterable and returns the result as a list.
+
+        This method is used to format the results of database operations before
+        returning them to the client.
+
+        Args:
+            objects (Iterable[dict[str, Any]]): An iterable of records to convert.
+
+        Returns:
+            (list[dict[str, Any]]): A list of records, where each record has been converted to return data
+            using the `_convert_obj` method.
+        """
+        return list(map(lambda obj: self._convert_obj(obj=obj), objects))

@@ -1,4 +1,4 @@
-from typing import Generator, List, Tuple, Type
+from typing import Generator, Type
 
 import pytest
 
@@ -8,9 +8,10 @@ from supadantic.models import BaseSBModel
 
 
 class ModelMock(BaseSBModel):
+    id: int | None = None
     name: str
-    some_optional_list: List[str] | None = None
-    some_optional_tuple: Tuple[str, ...] | None = None
+    some_optional_list: list[str] | None = None
+    some_optional_tuple: tuple[str, ...] | None = None
 
     @classmethod
     def db_client(cls) -> Type[BaseClient]:
@@ -25,5 +26,5 @@ def model_mock() -> Type[ModelMock]:
 @pytest.fixture(autouse=True, scope='function')
 def clean_db_cache(model_mock: Type['ModelMock']) -> Generator:
     yield
-    model_mock.objects._cache = {}  # pyright: ignore
-    model_mock.objects.all().delete()  # pyright: ignore
+    model_mock.objects._cache = {}
+    model_mock.objects.all().delete()
