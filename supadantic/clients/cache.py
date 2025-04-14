@@ -14,12 +14,9 @@ class SingletoneMeta(BaseClientMeta):
 
     This metaclass ensures that only one instance of a class (and its subclasses)
     exists for a given set of initialization arguments (table_name and class).
-    This is useful for resources that should be shared and not duplicated, such
-    as connection pools or configurations.  It utilizes a dictionary to store
-    instances, keyed by a tuple of the initialization arguments, frozen set of keyword arguments
-    and the class itself.
+    It utilizes a dictionary to store instances, keyed by a tuple of the initialization arguments,
+    frozen set of keyword arguments and the class itself.
 
-    The instances are stored in a dictionary with the key being a tuple of the arguments and the class.
     In other words, it's possible to have only one instance with specific table name and child class.
     """
 
@@ -49,7 +46,7 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
     It implements the `BaseClient` interface for common database operations,
     simulating database interactions by operating on the in-memory cache.
 
-    This class is designed for testing and demonstrating the client interface.
+    This class is designed for testing.
     It is NOT suitable for production environments.
     """
 
@@ -118,7 +115,7 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
         self._cache_data[_id] = {'id': _id, **query_builder.insert_data}
         return [self._convert_obj(obj=self._cache_data[_id])]
 
-    def _update(self, *, query_builder) -> list[dict[str, Any]]:
+    def _update(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
         """
         Updates records in the cache that match the query builder's filter criteria.
 
