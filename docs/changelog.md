@@ -2,7 +2,7 @@
 
 ## Upcoming features (`master`)
 
-
+- Add `QSet.get_or_create` method ([#24](https://github.com/makridenko/supadantic/issues/24))
 
 ## v0.0.6
 
