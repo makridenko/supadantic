@@ -1,10 +1,12 @@
 from copy import copy
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any
 
 from .base import BaseClient, BaseClientMeta
 
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from supadantic.query_builder import QueryBuilder
 
 
@@ -20,7 +22,7 @@ class SingletoneMeta(BaseClientMeta):
     In other words, it's possible to have only one instance with specific table name and child class.
     """
 
-    _instances = {}
+    _instances: dict[tuple[tuple, frozenset, type], Any] = {}
 
     def __call__(cls, *args, **kwargs):
         """
@@ -34,7 +36,7 @@ class SingletoneMeta(BaseClientMeta):
 
         key = (args, frozenset(kwargs.items()), cls)
         if key not in cls._instances:
-            cls._instances[key] = super(SingletoneMeta, cls).__call__(*args, **kwargs)
+            cls._instances[key] = super().__call__(*args, **kwargs)
         return cls._instances[key]
 
 
@@ -112,7 +114,8 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
         else:
             _id = 1
 
-        self._cache_data[_id] = {'id': _id, **query_builder.insert_data}
+        insert_data = query_builder.insert_data if query_builder.insert_data else {}
+        self._cache_data[_id] = {'id': _id, **insert_data}
         return [self._convert_obj(obj=self._cache_data[_id])]
 
     def _update(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
@@ -136,7 +139,8 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
 
         result = []
         for _id in [data['id'] for data in filtered_data]:
-            self._cache_data[_id].update(query_builder.update_data)
+            update_data = query_builder.update_data if query_builder.update_data else {}
+            self._cache_data[_id].update(update_data)
             result.append(self._cache_data[_id])
 
         return self._get_return_data(objects=result)
@@ -160,20 +164,17 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
             (list[dict[str, Any]]): A list of records that match the filter criteria.  The records in the
             list are converted to return data using the `_get_return_data` method.
         """
-        equal_filters = {key: value for key, value in query_builder.equal}
-        not_equal_filters = {key: value for key, value in query_builder.not_equal}
+        equal_filters: dict[str, Any] = dict(pair for pair in query_builder.equal)
+        not_equal_filters: dict[str, Any] = dict(pair for pair in query_builder.not_equal)
 
         def _lambda_filter(obj: dict[str, Any]) -> bool:
             """Filter the records based on the equality and non-equality filters."""
-            for key, value in equal_filters.items():
-                if not obj[key] == value:
-                    return False
-
-            for key, value in not_equal_filters.items():
-                if not obj[key] != value:
-                    return False
-
-            return True
+            return all(
+                (
+                    all(obj[key] != value for key, value in not_equal_filters.items()),
+                    all(obj[key] == value for key, value in equal_filters.items()),
+                )
+            )
 
         result = filter(_lambda_filter, self._cache_data.values())
         return self._get_return_data(objects=result)
@@ -219,7 +220,7 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
 
         return result_data
 
-    def _get_return_data(self, *, objects: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _get_return_data(self, *, objects: 'Iterable[dict[str, Any]]') -> list[dict[str, Any]]:
         """
         Applies the `_convert_obj` method to each record in an iterable and returns the result as a list.
 
@@ -233,4 +234,4 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
             (list[dict[str, Any]]): A list of records, where each record has been converted to return data
             using the `_convert_obj` method.
         """
-        return list(map(lambda obj: self._convert_obj(obj=obj), objects))
+        return [self._convert_obj(obj=obj) for obj in objects]

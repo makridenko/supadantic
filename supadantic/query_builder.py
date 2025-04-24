@@ -1,5 +1,9 @@
 import enum
-from typing import Any, Iterable, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 class QueryBuilder:
@@ -27,8 +31,8 @@ class QueryBuilder:
 
     def __init__(self) -> None:
         self._select_fields: tuple[str, ...] | None = None
-        self._equal: tuple[tuple[str, ...], ...] = ()
-        self._not_equal: tuple[tuple[str, ...], ...] = ()
+        self._equal: tuple[tuple[str, Any], ...] = ()
+        self._not_equal: tuple[tuple[str, Any], ...] = ()
         self._insert_data: dict[str, Any] | None = None
         self._update_data: dict[str, Any] | None = None
         self._delete_mode: bool = False
@@ -52,7 +56,7 @@ class QueryBuilder:
         return self._select_fields
 
     @select_fields.setter
-    def select_fields(self, fields: Iterable[str]) -> None:
+    def select_fields(self, fields: 'Iterable[str]') -> None:
         """
         Sets the selected fields for the query.
 
@@ -69,12 +73,12 @@ class QueryBuilder:
             self._select_fields += tuple(fields)
 
     @property
-    def equal(self) -> tuple[tuple[str, ...], ...]:
+    def equal(self) -> tuple[tuple[str, Any], ...]:
         """
         Gets the equality filters for the query.
 
         Returns:
-            (tuple[tuple[str, ...], ...]): A tuple of tuples, where each inner tuple contains a field name
+            (tuple[tuple[str, Any], ...]): A tuple of tuples, where each inner tuple contains a field name
                                            and its desired value for equality filtering.
         """
 
@@ -96,12 +100,12 @@ class QueryBuilder:
         self._equal += self._dict_to_tuple(data=filters)
 
     @property
-    def not_equal(self) -> tuple[tuple[str, ...], ...]:
+    def not_equal(self) -> tuple[tuple[str, Any], ...]:
         """
         Gets the non-equality filters for the query.
 
         Returns:
-            (tuple[tuple[str, ...], ...]): A tuple of tuples, where each inner tuple contains a field name and
+            (tuple[tuple[str, Any], ...]): A tuple of tuples, where each inner tuple contains a field name and
                                            its desired value for non-equality filtering.
         """
 
@@ -236,7 +240,7 @@ class QueryBuilder:
 
         return self.Mode.FILTER_MODE
 
-    def _dict_to_tuple(self, *, data: dict[str, str]) -> tuple[tuple[str, ...], ...]:
+    def _dict_to_tuple(self, *, data: dict[str, str]) -> tuple[tuple[str, Any], ...]:
         """
         Converts a dictionary to a tuple of tuples.
 

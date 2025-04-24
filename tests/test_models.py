@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 
 from supadantic.q_set import QSet
 
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 class TestBaseSBModel:
-    def test_create(self, model_mock: Type['ModelMock']):
+    def test_create(self, model_mock: type['ModelMock']):
         # Prepare data
         test_entity = model_mock(
             name='test_name',
@@ -24,7 +24,7 @@ class TestBaseSBModel:
         assert saved_entity.name == 'test_name'
         assert saved_entity.some_optional_list == ['foo', 'bar']
 
-    def test_update(self, model_mock: Type['ModelMock']):
+    def test_update(self, model_mock: type['ModelMock']):
         # Prepare data
         model_mock(name='test_name', some_optional_list=['foo', 'bar']).save()
         model_mock(name='test_name_2', some_optional_list=['bar', 'foo']).save()
@@ -45,5 +45,5 @@ class TestBaseSBModel:
         assert updated_entity.some_optional_list == ['bar']
         assert updated_entity.some_optional_tuple == ('foo',)
 
-    def test_objects(self, model_mock: Type['ModelMock']):
+    def test_objects(self, model_mock: type['ModelMock']):
         assert isinstance(model_mock.objects, QSet)

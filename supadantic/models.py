@@ -2,15 +2,18 @@ import ast
 import re
 from abc import ABC
 from copy import copy
-from typing import Any, Type, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from pydantic import BaseModel, model_validator
 from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
 
 from .clients import SupabaseClient
-from .clients.base import BaseClient
 from .q_set import QSet
 from .query_builder import QueryBuilder
+
+
+if TYPE_CHECKING:
+    from clients.base import BaseClient
 
 
 _M = TypeVar('_M', bound='BaseSBModel')
@@ -47,12 +50,12 @@ class ModelMetaclass(PydanticModelMetaclass):
     """
 
     @property
-    def objects(cls: Type[_M]) -> QSet[_M]:
+    def objects(cls: type[_M]) -> QSet[_M]:  # type: ignore
         """
         Returns a QSet instance for querying the model's table.
         This is the primary interface for querying the database for instances of the model.
         """
-        return QSet[cls](cls)
+        return QSet[_M](cls)
 
 
 class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
@@ -66,8 +69,6 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
     definition syntax. They can override methods such as `db_client()` to
     customize the database client used for interactions.
     """
-
-    id: int | None = None
 
     class DoesNotExist(Exception):
         """
@@ -83,47 +84,7 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
 
         pass
 
-    @classmethod
-    def _get_table_name(cls) -> str:
-        """
-        Gets the table name associated with the model, converting the class name to snake case.
-
-        This method converts the class name to snake_case to determine the corresponding
-        table name in the database.
-
-        Returns:
-            (str): The table name in snake_case.
-        """
-        return _to_snake_case(cls.__name__)
-
-    @classmethod
-    def _get_db_client(cls) -> BaseClient:
-        """
-        Retrieves the database client instance for the model, configured with the table name.
-
-        This method creates a database client instance using the `db_client()` method
-        and initializes it with the appropriate table name.
-
-        Returns:
-            (BaseClient): An initialized instance of the database client.
-        """
-
-        table_name = cls._get_table_name()
-        return cls.db_client()(table_name)
-
-    @classmethod
-    def db_client(cls) -> Type[BaseClient]:
-        """
-        Gets the database client class to use for interactions.
-
-        This method can be overridden in subclasses to provide a custom database
-        client implementation.  The default implementation returns `SupabaseClient`.
-
-        Returns:
-            (BaseClient): The database client class.
-        """
-
-        return SupabaseClient
+    id: int | None = None
 
     def save(self: _M) -> _M:
         """
@@ -144,10 +105,10 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         query_builder = QueryBuilder()
 
         if self.id:
-            query_builder.equal = {'id': self.id}
-            query_builder.update_data = data
+            query_builder.equal = {'id': self.id}  # type: ignore
+            query_builder.update_data = data  # type: ignore
         else:
-            query_builder.insert_data = data
+            query_builder.insert_data = data  # type: ignore
 
         response_data = db_client.execute(query_builder=query_builder)[0]
         return self.__class__(**response_data)
@@ -163,11 +124,53 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
 
         if self.id:
             query_builder = QueryBuilder()
-            query_builder.equal = {'id': self.id}
+            query_builder.equal = {'id': self.id}  # type: ignore
             query_builder.delete_mode = True
 
             db_client = self._get_db_client()
             db_client.execute(query_builder=query_builder)
+
+    @classmethod
+    def db_client(cls) -> type['BaseClient']:
+        """
+        Gets the database client class to use for interactions.
+
+        This method can be overridden in subclasses to provide a custom database
+        client implementation.  The default implementation returns `SupabaseClient`.
+
+        Returns:
+            (BaseClient): The database client class.
+        """
+
+        return SupabaseClient
+
+    @classmethod
+    def _get_table_name(cls) -> str:
+        """
+        Gets the table name associated with the model, converting the class name to snake case.
+
+        This method converts the class name to snake_case to determine the corresponding
+        table name in the database.
+
+        Returns:
+            (str): The table name in snake_case.
+        """
+        return _to_snake_case(cls.__name__)
+
+    @classmethod
+    def _get_db_client(cls) -> 'BaseClient':
+        """
+        Retrieves the database client instance for the model, configured with the table name.
+
+        This method creates a database client instance using the `db_client()` method
+        and initializes it with the appropriate table name.
+
+        Returns:
+            (BaseClient): An initialized instance of the database client.
+        """
+
+        table_name = cls._get_table_name()
+        return cls.db_client()(table_name)
 
     @model_validator(mode='before')
     def _validate_data_from_supabase(cls, data: dict[str, Any]) -> dict[str, Any]:
@@ -192,9 +195,9 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
             _field_is_array = any(
                 (
                     # If field is required, it's possible to get type
-                    value.get('type', None) == 'array',
+                    value.get('type') == 'array',
                     # If field is optional, it's possible to get type from anyOf array
-                    any(item.get('type', None) == 'array' for item in value.get('anyOf', [])),
+                    any(item.get('type') == 'array' for item in value.get('anyOf', [])),
                 )
             )
 
