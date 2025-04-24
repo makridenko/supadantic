@@ -295,6 +295,34 @@ class QSet(Generic[_M]):
         response_data: list[dict[str, Any]] = self.client.execute(query_builder=self._query_builder)  # type: ignore
         return self._model_class(**response_data[0])
 
+    def get_or_create(self, defaults: dict[str, Any] | None = None, **kwargs: Any) -> tuple[_M, bool]:
+        """
+        Tries to retrieve an object with the given parameters or creates one if it doesn't exist.
+
+        Args:
+            defaults (dict[str, Any] | None): A dictionary of values to use when creating a new object.
+            **kwargs (Any): Keyword arguments representing the filter criteria.
+
+        Returns:
+            (tuple[_M, bool]): A tuple containing the retrieved or created object and a boolean indicating whether
+                               the object was newly created or retrieved.
+
+        Examples:
+            >>> obj, created = Model.objects.get_or_create(name="Alex", defaults={"age": 30})
+            >>> if created:
+            ...     print("New object created!")
+            >>> else:
+            ...     print("Object retrieved.")
+        """
+
+        try:
+            return self.get(**kwargs), False
+        except self._model_class.DoesNotExist:
+            if defaults is not None:
+                kwargs.update(defaults)
+            new_obj = self.create(**kwargs)
+            return new_obj, True
+
     def _execute(self) -> None:
         """
         Executes the query and populates the cache with the results.

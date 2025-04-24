@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 class ModelMock(BaseSBModel):
     id: int | None = None
     name: str
+    age: int | None = None
     some_optional_list: list[str] | None = None
     some_optional_tuple: tuple[str, ...] | None = None
 

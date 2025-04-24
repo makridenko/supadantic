@@ -127,3 +127,13 @@ class TestQSet:
                 model_mock(id=2, name='second'),
             ],
         )
+
+    def test_get_or_create(self, model_mock: type['ModelMock']):
+        expected_obj = model_mock(name='test', age=21).save()
+        assert QSet(model_class=model_mock).get_or_create(name='test', defaults={'age': 23}) == (expected_obj, False)
+
+        created_obj, result = QSet(model_class=model_mock).get_or_create(name='create', defaults={'age': 23})
+        assert result is True
+        assert created_obj.id is not None
+        assert created_obj.name == 'create'
+        assert created_obj.age == 23
