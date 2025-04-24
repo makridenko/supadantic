@@ -110,6 +110,12 @@ jobs:
         run: |
           poetry version ${{ needs.details.outputs.new_version }}
 
+      - name: Commit project version
+        run: |
+          git add pyproject.toml
+          git commit -m "update version: ${{ github.event.release.tag_name:1 }}"
+          git push origin master
+
       - name: Install dependencies
         run: poetry install --sync --no-interaction
 
