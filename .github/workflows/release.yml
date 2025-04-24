@@ -111,10 +111,9 @@ jobs:
           poetry version ${{ needs.details.outputs.new_version }}
 
       - name: Commit project version
-        run: |
-          git add pyproject.toml
-          git commit -m "update version: ${{ github.event.release.tag_name }}"
-          git push origin master
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'update version: ${{ github.event.release.tag_name }}'
 
       - name: Install dependencies
         run: poetry install --sync --no-interaction
