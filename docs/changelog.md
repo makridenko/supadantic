@@ -2,7 +2,12 @@
 
 ## Upcoming features (`master`)
 
+
+
+## v0.0.7
+
 - Update `pre-commit` hooks ([#53](https://github.com/makridenko/supadantic/issues/53), [#51](https://github.com/makridenko/supadantic/issues/51))
+- Update github workflows ([#50](https://github.com/makridenko/supadantic/issues/50))
 
 
 ## v0.0.6
