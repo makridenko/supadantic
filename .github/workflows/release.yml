@@ -123,6 +123,9 @@ jobs:
           name: dist
           path: dist/
 
+      - name: Publish documentation
+        run: poetry run mkdocs gh-deploy --force
+
   pypi_publish:
     name: Upload release to PyPI
     needs: [setup_and_build, details]
@@ -133,7 +136,7 @@ jobs:
       id-token: write
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
@@ -165,10 +168,3 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create ${{ needs.details.outputs.tag_name }} dist/* --title ${{ needs.details.outputs.tag_name }} --generate-notes
-
-  deploy-docs:
-    needs: [setup_and_build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy documentation
-        run: poetry run mkdocs gh-deploy --force
