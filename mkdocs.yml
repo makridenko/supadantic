@@ -7,7 +7,6 @@ copyright: Maintained by <a href="https://github.com/makridenko/">Alexey Makride
 nav:
   - Home:
     - Overview: index.md
-    - Changelog: changelog.md
   - API Documentation:
     - Clients:
       - BaseClient: clients/base.md

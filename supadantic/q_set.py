@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Generic, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from supadantic.query_builder import QueryBuilder
 
@@ -48,7 +48,7 @@ class QSet(Generic[_M]):
 
     def __init__(
         self,
-        model_class: Type[_M],
+        model_class: type[_M],
         cache: list[_M] | None = None,
         query_builder: QueryBuilder | None = None,
     ) -> None:
@@ -65,6 +65,24 @@ class QSet(Generic[_M]):
         self._model_class = model_class
         self._cache = cache
         self._query_builder = query_builder if query_builder else QueryBuilder()
+
+    def delete(self) -> int:
+        """
+        Deletes the objects in the QSet from the database.
+
+        This method sets the `delete_mode` attribute on the QueryBuilder and executes
+        the query. It returns the number of objects that were deleted.
+
+        Returns:
+            (int): The number of objects deleted.
+
+        Examples:
+            >>> num_deleted = Model.objects.filter(active=False).delete()
+        """
+
+        self._query_builder.delete_mode = True
+        self._execute()
+        return len(self._cache) if self._cache else 0
 
     @property
     def client(self) -> 'BaseClient':
@@ -113,7 +131,7 @@ class QSet(Generic[_M]):
         """
 
         self._validate_filters(**filters)
-        self._query_builder.equal = filters
+        self._query_builder.equal = filters  # type: ignore
         return self._copy()
 
     def exclude(self, **filters: Any) -> 'QSet[_M]':
@@ -134,7 +152,7 @@ class QSet(Generic[_M]):
         """
 
         self._validate_filters(**filters)
-        self._query_builder.not_equal = filters
+        self._query_builder.not_equal = filters  # type: ignore
         return self._copy()
 
     def get(self, **filters: Any) -> _M:
@@ -167,7 +185,7 @@ class QSet(Generic[_M]):
                 f'For {filters} returned more than 1 {self._model_class.__name__} objects!'
             )
 
-        return self.first()
+        return self._cache[0]
 
     def count(self) -> int:
         """
@@ -188,7 +206,8 @@ class QSet(Generic[_M]):
             return len(self._cache)
 
         self._query_builder.count_mode = True
-        return self.client.execute(query_builder=self._query_builder)
+        result: int = self.client.execute(query_builder=self._query_builder)  # type: ignore
+        return result
 
     def first(self) -> _M | None:
         """
@@ -251,9 +270,8 @@ class QSet(Generic[_M]):
 
         self._query_builder.update_data = data
         self._execute()
-        return len(self._cache)
+        return len(self._cache) if self._cache else 0
 
-    # TODO: deal with typing
     def create(self, **data) -> _M:
         """
         Creates a new instance of the model in the database.
@@ -274,26 +292,8 @@ class QSet(Generic[_M]):
                 raise self.InvalidField(f'Invalid field {field}!')
 
         self._query_builder.insert_data = data
-        response_data = self.client.execute(query_builder=self._query_builder)[0]
-        return self._model_class(**response_data)
-
-    def delete(self) -> int:
-        """
-        Deletes the objects in the QSet from the database.
-
-        This method sets the `delete_mode` attribute on the QueryBuilder and executes
-        the query. It returns the number of objects that were deleted.
-
-        Returns:
-            (int): The number of objects deleted.
-
-        Examples:
-            >>> num_deleted = Model.objects.filter(active=False).delete()
-        """
-
-        self._query_builder.delete_mode = True
-        self._execute()
-        return len(self._cache)
+        response_data: list[dict[str, Any]] = self.client.execute(query_builder=self._query_builder)  # type: ignore
+        return self._model_class(**response_data[0])
 
     def get_or_create(self, defaults: dict[str, Any] | None = None, **kwargs: Any) -> tuple[_M, bool]:
         """
@@ -323,6 +323,18 @@ class QSet(Generic[_M]):
             new_obj = self.create(**kwargs)
             return new_obj, True
 
+    def _execute(self) -> None:
+        """
+        Executes the query and populates the cache with the results.
+
+        This method uses the database client to execute the query built by the
+        QueryBuilder and populates the `_cache` attribute with model instances
+        created from the response data.
+        """
+
+        response_data: list[dict[str, Any]] = self.client.execute(query_builder=self._query_builder)  # type: ignore
+        self._cache = [self._model_class(**data) for data in response_data]
+
     def _validate_filters(self, **filters) -> None:
         """
         Validates the filter names against the model's fields.
@@ -349,25 +361,13 @@ class QSet(Generic[_M]):
         """
         return self.__class__(model_class=self._model_class, cache=self._cache, query_builder=self._query_builder)
 
-    def _execute(self) -> None:
-        """
-        Executes the query and populates the cache with the results.
-
-        This method uses the database client to execute the query built by the
-        QueryBuilder and populates the `_cache` attribute with model instances
-        created from the response data.
-        """
-
-        response_data = self.client.execute(query_builder=self._query_builder)
-        self._cache = list(self._model_class(**data) for data in response_data)
-
     def __iter__(self):
         self._execute()
         return iter(self._cache)
 
     def __len__(self) -> int:
         self._execute()
-        return len(self._cache)
+        return len(self._cache) if self._cache else 0
 
     def __getitem__(self, index: int) -> _M:
         self._execute()

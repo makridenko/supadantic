@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "supadantic"
-version = "0.0.6"
+version = "0.0.7"
 description = "Supabase integration for pydantic"
 authors = ["Alexey Makridenko <alexey.makridenko@gmail.com>"]
 license = "MIT license"
@@ -13,6 +13,12 @@ pythonpath = "supadantic"
 [tool.black]
 line-length = 120
 skip-string-normalization = true
+
+[tool.mypy]
+ignore_missing_imports = true
+plugins = [
+  'pydantic.mypy',
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"

@@ -1,5 +1,5 @@
 from abc import ABC, ABCMeta, abstractmethod
-from typing import Any
+from typing import Any, Callable
 
 from supadantic.query_builder import QueryBuilder
 
@@ -40,7 +40,7 @@ class BaseClient(ABC, metaclass=BaseClientMeta):
 
         self.table_name = table_name
 
-    def execute(self, *, query_builder: QueryBuilder) -> dict[str, Any] | int:
+    def execute(self, *, query_builder: QueryBuilder) -> list[dict[str, Any]] | int:
         """
         Executes a query constructed by the provided QueryBuilder.
 
@@ -59,7 +59,7 @@ class BaseClient(ABC, metaclass=BaseClientMeta):
                                     of the dictionary depends on the specific data returned by the underlying database.
         """
 
-        map_modes = {
+        map_modes: dict[QueryBuilder.Mode, Callable] = {
             QueryBuilder.Mode.DELETE_MODE: self._delete,
             QueryBuilder.Mode.INSERT_MODE: self._insert,
             QueryBuilder.Mode.UPDATE_MODE: self._update,
@@ -70,7 +70,7 @@ class BaseClient(ABC, metaclass=BaseClientMeta):
         return map_modes[query_builder.mode](query_builder=query_builder)
 
     @abstractmethod
-    def _delete(self, *, query_builder: QueryBuilder) -> int:
+    def _delete(self, *, query_builder: QueryBuilder) -> list[dict[str, Any]]:
         """
         Abstract method to delete records from the database.
 
@@ -104,7 +104,7 @@ class BaseClient(ABC, metaclass=BaseClientMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def _update(self, *, query_builder: QueryBuilder) -> int:
+    def _update(self, *, query_builder: QueryBuilder) -> list[dict[str, Any]]:
         """
         Abstract method to update records in the database.
 
