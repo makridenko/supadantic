@@ -3,14 +3,14 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from supabase.client import create_client
 
-from supadantic.query_builder import QueryBuilder
-
 from .base import BaseClient
 
 
 if TYPE_CHECKING:
     from postgrest._sync.request_builder import SyncSelectRequestBuilder
     from postgrest.base_request_builder import BaseFilterRequestBuilder
+
+    from supadantic.query_builder import QueryBuilder
 
 
 class SupabaseClient(BaseClient):

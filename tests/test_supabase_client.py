@@ -1,15 +1,19 @@
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, Mock
 
 import pytest
-from pytest_mock import MockerFixture
 
 from supadantic.clients import SupabaseClient
 from supadantic.query_builder import QueryBuilder
 
 
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
+
+
 class TestSupabaseClient:
     @pytest.fixture(autouse=True)
-    def mock_create_client(self, mocker: MockerFixture) -> MagicMock:
+    def mock_create_client(self, mocker: 'MockerFixture') -> MagicMock:
         return mocker.patch('supadantic.clients.supabase.create_client')
 
     @pytest.fixture
@@ -25,8 +29,8 @@ class TestSupabaseClient:
         supabase_client.query = mock_supabase_query
 
         query_builder = QueryBuilder()
-        query_builder.equal = {'id': 1}
-        query_builder.not_equal = {'title': 'test'}
+        query_builder.equal = {'id': 1}  # type: ignore
+        query_builder.not_equal = {'title': 'test'}  # type: ignore
         query_builder.delete_mode = True
 
         # Execution
@@ -68,8 +72,8 @@ class TestSupabaseClient:
 
         query_builder = QueryBuilder()
         query_builder.update_data = {'update': 'data'}
-        query_builder.equal = {'id': 1}
-        query_builder.not_equal = {'title': 'test'}
+        query_builder.equal = {'id': 1}  # type: ignore
+        query_builder.not_equal = {'title': 'test'}  # type: ignore
 
         # Execution
         result = supabase_client.execute(query_builder=query_builder)
@@ -91,8 +95,8 @@ class TestSupabaseClient:
         supabase_client.query = mock_supabase_query
 
         query_builder = QueryBuilder()
-        query_builder.equal = {'id': 1}
-        query_builder.not_equal = {'title': 'test'}
+        query_builder.equal = {'id': 1}  # type: ignore
+        query_builder.not_equal = {'title': 'test'}  # type: ignore
 
         # Execution
         result = supabase_client.execute(query_builder=query_builder)
@@ -111,8 +115,8 @@ class TestSupabaseClient:
         supabase_client.query = mock_supabase_query
 
         query_builder = QueryBuilder()
-        query_builder.equal = {'id': 1}
-        query_builder.not_equal = {'title': 'test'}
+        query_builder.equal = {'id': 1}  # type: ignore
+        query_builder.not_equal = {'title': 'test'}  # type: ignore
         query_builder.count_mode = True
 
         # Execution
