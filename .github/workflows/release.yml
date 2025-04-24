@@ -96,7 +96,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: master
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -115,7 +115,7 @@ jobs:
       - name: Commit project version
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "update version: ${{ github.event.release.tag_name }}"
+          commit_message: "update version: ${{ needs.details.outputs.new_version }}"
 
       - name: Install dependencies
         run: poetry install --sync --no-interaction
