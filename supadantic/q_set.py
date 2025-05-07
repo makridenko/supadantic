@@ -206,7 +206,10 @@ class QSet(Generic[_M]):
             return len(self._cache)
 
         self._query_builder.set_count_mode(True)
-        result: int = self.client.execute(query_builder=self._query_builder)  # type: ignore
+        result = self.client.execute(query_builder=self._query_builder)
+        if not isinstance(result, int):
+            raise TypeError(f"Expected int from client.execute in count(), got {type(result)}")
+
         return result
 
     def first(self) -> _M | None:
@@ -292,7 +295,10 @@ class QSet(Generic[_M]):
                 raise self.InvalidField(f'Invalid field {field}!')
 
         self._query_builder.set_insert_data(data)
-        response_data: list[dict[str, Any]] = self.client.execute(query_builder=self._query_builder)  # type: ignore
+        response_data = self.client.execute(query_builder=self._query_builder)
+        if not isinstance(response_data, list):
+            raise TypeError(f"Expected list from client.execute in create(), got {type(response_data)}")
+
         return self._model_class(**response_data[0])
 
     def get_or_create(self, defaults: dict[str, Any] | None = None, **kwargs: Any) -> tuple[_M, bool]:
@@ -332,7 +338,10 @@ class QSet(Generic[_M]):
         created from the response data.
         """
 
-        response_data: list[dict[str, Any]] = self.client.execute(query_builder=self._query_builder)  # type: ignore
+        response_data = self.client.execute(query_builder=self._query_builder)
+        if not isinstance(response_data, list):
+            raise TypeError(f"Expected list from client.execute in _execute(), got {type(response_data)}")
+
         self._cache = [self._model_class(**data) for data in response_data]
 
     def _validate_filters(self, **filters) -> None:
