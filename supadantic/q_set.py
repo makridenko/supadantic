@@ -80,7 +80,7 @@ class QSet(Generic[_M]):
             >>> num_deleted = Model.objects.filter(active=False).delete()
         """
 
-        self._query_builder.delete_mode = True
+        self._query_builder.set_delete_mode(True)
         self._execute()
         return len(self._cache) if self._cache else 0
 
@@ -131,7 +131,7 @@ class QSet(Generic[_M]):
         """
 
         self._validate_filters(**filters)
-        self._query_builder.equal = filters  # type: ignore
+        self._query_builder.set_equal(**filters)
         return self._copy()
 
     def exclude(self, **filters: Any) -> 'QSet[_M]':
@@ -152,7 +152,7 @@ class QSet(Generic[_M]):
         """
 
         self._validate_filters(**filters)
-        self._query_builder.not_equal = filters  # type: ignore
+        self._query_builder.set_not_equal(**filters)
         return self._copy()
 
     def get(self, **filters: Any) -> _M:
@@ -205,7 +205,7 @@ class QSet(Generic[_M]):
         if self._cache is not None:
             return len(self._cache)
 
-        self._query_builder.count_mode = True
+        self._query_builder.set_count_mode(True)
         result: int = self.client.execute(query_builder=self._query_builder)  # type: ignore
         return result
 
@@ -268,7 +268,7 @@ class QSet(Generic[_M]):
             if field not in self._model_class.model_fields.keys():
                 raise self.InvalidField(f'Invalid field {field}!')
 
-        self._query_builder.update_data = data
+        self._query_builder.set_update_data(data)
         self._execute()
         return len(self._cache) if self._cache else 0
 
@@ -291,7 +291,7 @@ class QSet(Generic[_M]):
             if field not in self._model_class.model_fields.keys():
                 raise self.InvalidField(f'Invalid field {field}!')
 
-        self._query_builder.insert_data = data
+        self._query_builder.set_insert_data(data)
         response_data: list[dict[str, Any]] = self.client.execute(query_builder=self._query_builder)  # type: ignore
         return self._model_class(**response_data[0])
 
