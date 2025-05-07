@@ -29,9 +29,9 @@ class TestSupabaseClient:
         supabase_client.query = mock_supabase_query
 
         query_builder = QueryBuilder()
-        query_builder.equal = {'id': 1}  # type: ignore
-        query_builder.not_equal = {'title': 'test'}  # type: ignore
-        query_builder.delete_mode = True
+        query_builder.set_equal(id=1)
+        query_builder.set_not_equal(title='test')
+        query_builder.set_delete_mode(True)
 
         # Execution
         result = supabase_client.execute(query_builder=query_builder)
@@ -51,7 +51,7 @@ class TestSupabaseClient:
         supabase_client.query = mock_supabase_query
 
         query_builder = QueryBuilder()
-        query_builder.insert_data = {'insert': 'data'}
+        query_builder.set_insert_data({'insert': 'data'})
 
         # Execution
         result = supabase_client.execute(query_builder=query_builder)
@@ -71,9 +71,9 @@ class TestSupabaseClient:
         supabase_client.query = mock_supabase_query
 
         query_builder = QueryBuilder()
-        query_builder.update_data = {'update': 'data'}
-        query_builder.equal = {'id': 1}  # type: ignore
-        query_builder.not_equal = {'title': 'test'}  # type: ignore
+        query_builder.set_update_data({'update': 'data'})
+        query_builder.set_equal(id=1)
+        query_builder.set_not_equal(title='test')
 
         # Execution
         result = supabase_client.execute(query_builder=query_builder)
@@ -95,8 +95,8 @@ class TestSupabaseClient:
         supabase_client.query = mock_supabase_query
 
         query_builder = QueryBuilder()
-        query_builder.equal = {'id': 1}  # type: ignore
-        query_builder.not_equal = {'title': 'test'}  # type: ignore
+        query_builder.set_equal(id=1)
+        query_builder.set_not_equal(title='test')
 
         # Execution
         result = supabase_client.execute(query_builder=query_builder)
@@ -115,9 +115,9 @@ class TestSupabaseClient:
         supabase_client.query = mock_supabase_query
 
         query_builder = QueryBuilder()
-        query_builder.equal = {'id': 1}  # type: ignore
-        query_builder.not_equal = {'title': 'test'}  # type: ignore
-        query_builder.count_mode = True
+        query_builder.set_equal(id=1)
+        query_builder.set_not_equal(title='test')
+        query_builder.set_count_mode(True)
 
         # Execution
         result = supabase_client.execute(query_builder=query_builder)

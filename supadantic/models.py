@@ -105,10 +105,10 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         query_builder = QueryBuilder()
 
         if self.id:
-            query_builder.equal = {'id': self.id}  # type: ignore
-            query_builder.update_data = data  # type: ignore
+            query_builder.set_equal(id=self.id)
+            query_builder.set_update_data(data)
         else:
-            query_builder.insert_data = data  # type: ignore
+            query_builder.set_insert_data(data)
 
         response_data = db_client.execute(query_builder=query_builder)[0]
         return self.__class__(**response_data)
@@ -124,8 +124,8 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
 
         if self.id:
             query_builder = QueryBuilder()
-            query_builder.equal = {'id': self.id}  # type: ignore
-            query_builder.delete_mode = True
+            query_builder.set_equal(id=self.id)
+            query_builder.set_delete_mode(True)
 
             db_client = self._get_db_client()
             db_client.execute(query_builder=query_builder)

@@ -55,23 +55,6 @@ class QueryBuilder:
             return '*'
         return self._select_fields
 
-    @select_fields.setter
-    def select_fields(self, fields: 'Iterable[str]') -> None:
-        """
-        Sets the selected fields for the query.
-
-        This method appends the provided fields to the existing set of selected
-        fields. It converts the input to a tuple.
-
-        Args:
-            fields (Iterable[str]): An iterable of strings representing the fields to select.
-        """
-
-        if self._select_fields is None:
-            self._select_fields = tuple(fields)
-        else:
-            self._select_fields += tuple(fields)
-
     @property
     def equal(self) -> tuple[tuple[str, Any], ...]:
         """
@@ -83,21 +66,6 @@ class QueryBuilder:
         """
 
         return self._equal
-
-    @equal.setter
-    def equal(self, filters: dict[str, Any]) -> None:
-        """
-        Sets the equality filters for the query.
-
-        This method converts the input dictionary of filters to a tuple of tuples
-        and appends them to the existing set of equality filters.
-
-        Args:
-            filters (dict[str, Any]): A dictionary representing the equality filters to apply,
-                                      where keys are field names and values are the desired values for equality.
-        """
-
-        self._equal += self._dict_to_tuple(data=filters)
 
     @property
     def not_equal(self) -> tuple[tuple[str, Any], ...]:
@@ -111,21 +79,6 @@ class QueryBuilder:
 
         return self._not_equal
 
-    @not_equal.setter
-    def not_equal(self, filters: dict[str, Any]) -> None:
-        """
-        Sets the non-equality filters for the query.
-
-        This method converts the input dictionary of filters to a tuple of tuples
-        and appends them to the existing set of non-equality filters.
-
-        Args:
-            filters (dict[str, Any]): A dictionary representing the non-equality filters to apply,
-                                      where keys are field names and values are the values to exclude.
-        """
-
-        self._not_equal += self._dict_to_tuple(data=filters)
-
     @property
     def insert_data(self) -> dict[str, Any] | None:
         """
@@ -138,18 +91,6 @@ class QueryBuilder:
 
         return self._insert_data
 
-    @insert_data.setter
-    def insert_data(self, data: dict[str, Any]) -> None:
-        """
-        Sets the data to be inserted in an insert query.
-
-        Args:
-            data (dict[str, Any]): A dictionary representing the data to be inserted,
-                                   where keys are field names and values are the corresponding values.
-        """
-
-        self._insert_data = data
-
     @property
     def update_data(self) -> dict[str, Any] | None:
         """
@@ -160,18 +101,6 @@ class QueryBuilder:
                                      or None if no data has been set for updating.
         """
         return self._update_data
-
-    @update_data.setter
-    def update_data(self, data: dict[str, Any]) -> None:
-        """
-        Sets the data to be updated in an update query.
-
-        Args:
-            data (dict[str, Any]): A dictionary representing the data to be updated,
-                                   where keys are field names and values are the new values.
-        """
-
-        self._update_data = data
 
     @property
     def delete_mode(self) -> bool:
@@ -184,17 +113,6 @@ class QueryBuilder:
 
         return self._delete_mode
 
-    @delete_mode.setter
-    def delete_mode(self, value: bool) -> None:
-        """
-        Sets the delete mode flag.
-
-        Args:
-            value: True to set the query to delete mode, False otherwise.
-        """
-
-        self._delete_mode = value
-
     @property
     def count_mode(self) -> bool:
         """
@@ -205,17 +123,6 @@ class QueryBuilder:
         """
 
         return self._count_mode
-
-    @count_mode.setter
-    def count_mode(self, value: bool) -> None:
-        """
-        Sets the count mode flag.
-
-        Args:
-            value (bool): True to set the query to count mode, False otherwise.
-        """
-
-        self._count_mode = value
 
     @property
     def mode(self) -> 'Mode':
@@ -239,6 +146,90 @@ class QueryBuilder:
             return self.Mode.COUNT_MODE
 
         return self.Mode.FILTER_MODE
+
+    def set_select_fields(self, fields: 'Iterable[str]') -> None:
+        """
+        Sets the selected fields for the query.
+
+        This method appends the provided fields to the existing set of selected
+        fields. It converts the input to a tuple.
+
+        Args:
+            fields (Iterable[str]): An iterable of strings representing the fields to select.
+        """
+
+        if self._select_fields is None:
+            self._select_fields = tuple(fields)
+        else:
+            self._select_fields += tuple(fields)
+
+    def set_equal(self, **kwargs) -> None:
+        """
+        Sets the equality filters for the query.
+
+        This method accepts keyword arguments representing the equality filters
+        and appends them to the existing set of equality filters.
+
+        Args:
+            **kwargs: Key-value pairs where keys are field names and values are the desired values for equality.
+        """
+
+        self._equal += self._dict_to_tuple(data=kwargs)
+
+    def set_not_equal(self, **kwargs) -> None:
+        """
+        Sets the non-equality filters for the query.
+
+        This method accepts keyword arguments representing the non-equality filters
+        and appends them to the existing set of non-equality filters.
+
+        Args:
+            **kwargs: Key-value pairs where keys are field names and values are the values to exclude.
+        """
+
+        self._not_equal += self._dict_to_tuple(data=kwargs)
+
+    def set_insert_data(self, data: dict[str, Any]) -> None:
+        """
+        Sets the data to be inserted in an insert query.
+
+        Args:
+            data (dict[str, Any]): A dictionary representing the data to be inserted,
+                                   where keys are field names and values are the corresponding values.
+        """
+
+        self._insert_data = data
+
+    def set_update_data(self, data: dict[str, Any]) -> None:
+        """
+        Sets the data to be updated in an update query.
+
+        Args:
+            data (dict[str, Any]): A dictionary representing the data to be updated,
+                                   where keys are field names and values are the new values.
+        """
+
+        self._update_data = data
+
+    def set_delete_mode(self, value: bool) -> None:
+        """
+        Sets the delete mode flag.
+
+        Args:
+            value: True to set the query to delete mode, False otherwise.
+        """
+
+        self._delete_mode = value
+
+    def set_count_mode(self, value: bool) -> None:
+        """
+        Sets the count mode flag.
+
+        Args:
+            value (bool): True to set the query to count mode, False otherwise.
+        """
+
+        self._count_mode = value
 
     def _dict_to_tuple(self, *, data: dict[str, str]) -> tuple[tuple[str, Any], ...]:
         """
