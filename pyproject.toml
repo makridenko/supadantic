@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "supadantic"
-version = "v0.0.8"
+version = "0.0.9"
 description = "Supabase integration for pydantic"
 authors = ["Alexey Makridenko <alexey.makridenko@gmail.com>"]
 license = "MIT license"
