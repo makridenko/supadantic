@@ -1277,8 +1277,8 @@ method does nothing.</p>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
         <span class="n">query_builder</span> <span class="o">=</span> <span class="n">QueryBuilder</span><span class="p">()</span>
-        <span class="n">query_builder</span><span class="o">.</span><span class="n">equal</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">}</span>  <span class="c1"># type: ignore</span>
-        <span class="n">query_builder</span><span class="o">.</span><span class="n">delete_mode</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">query_builder</span><span class="o">.</span><span class="n">set_equal</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">query_builder</span><span class="o">.</span><span class="n">set_delete_mode</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="n">db_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_db_client</span><span class="p">()</span>
         <span class="n">db_client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_builder</span><span class="o">=</span><span class="n">query_builder</span><span class="p">)</span>
@@ -1376,10 +1376,10 @@ data returned from the database after the save operation.</p>
     <span class="n">query_builder</span> <span class="o">=</span> <span class="n">QueryBuilder</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
-        <span class="n">query_builder</span><span class="o">.</span><span class="n">equal</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">}</span>  <span class="c1"># type: ignore</span>
-        <span class="n">query_builder</span><span class="o">.</span><span class="n">update_data</span> <span class="o">=</span> <span class="n">data</span>  <span class="c1"># type: ignore</span>
+        <span class="n">query_builder</span><span class="o">.</span><span class="n">set_equal</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">query_builder</span><span class="o">.</span><span class="n">set_update_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">query_builder</span><span class="o">.</span><span class="n">insert_data</span> <span class="o">=</span> <span class="n">data</span>  <span class="c1"># type: ignore</span>
+        <span class="n">query_builder</span><span class="o">.</span><span class="n">set_insert_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
     <span class="n">response_data</span> <span class="o">=</span> <span class="n">db_client</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query_builder</span><span class="o">=</span><span class="n">query_builder</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="o">**</span><span class="n">response_data</span><span class="p">)</span>

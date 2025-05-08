@@ -2,34 +2,34 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://makridenko.github.com/supadantic/</loc>
-         <lastmod>2025-04-24</lastmod>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>https://makridenko.github.com/supadantic/q_set/</loc>
-         <lastmod>2025-04-24</lastmod>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>https://makridenko.github.com/supadantic/query_builder/</loc>
-         <lastmod>2025-04-24</lastmod>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>https://makridenko.github.com/supadantic/clients/base/</loc>
-         <lastmod>2025-04-24</lastmod>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>https://makridenko.github.com/supadantic/clients/cache/</loc>
-         <lastmod>2025-04-24</lastmod>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>https://makridenko.github.com/supadantic/clients/supabase/</loc>
-         <lastmod>2025-04-24</lastmod>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>https://makridenko.github.com/supadantic/models/base_sb_model/</loc>
-         <lastmod>2025-04-24</lastmod>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>https://makridenko.github.com/supadantic/models/model_metaclass/</loc>
-         <lastmod>2025-04-24</lastmod>
+         <lastmod>2025-05-08</lastmod>
     </url>
 </urlset>
