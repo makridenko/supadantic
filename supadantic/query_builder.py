@@ -35,6 +35,7 @@ class QueryBuilder:
         self._not_equal: tuple[tuple[str, Any], ...] = ()
         self._insert_data: dict[str, Any] | None = None
         self._update_data: dict[str, Any] | None = None
+        self._order_by_fields: list[str] = []
         self._delete_mode: bool = False
         self._count_mode: bool = False
 
@@ -247,3 +248,27 @@ class QueryBuilder:
         """
 
         return tuple((key, value) for key, value in data.items())
+    
+    def set_ordering(self, fields: 'Iterable[str]') -> None:
+        self._order_by_fields = list(fields)
+
+    def build_select_query(self, table_name: str) -> str:
+        fields = ", ".join(self.select_fields) if self.select_fields != '*' else '*'
+        query = f"SELECT {fields} FROM {table_name}"
+    
+        conditions = []
+        for key, value in self.equal:
+            conditions.append(f"{key} = '{value}'")
+        for key, value in self.not_equal:
+            conditions.append(f"{key} != '{value}'")
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+    
+        if self._order_by_fields:
+            ordering = ", ".join([
+                f"{field.lstrip('-')} DESC" if field.startswith('-') else f"{field} ASC"
+                for field in self._order_by_fields
+            ])
+            query += f" ORDER BY {ordering}"
+    
+        return query + ";"
