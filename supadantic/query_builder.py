@@ -232,6 +232,49 @@ class QueryBuilder:
 
         self._count_mode = value
 
+    def set_ordering(self, fields: 'Iterable[str]') -> None:
+        """
+        Set the fields by which the results should be ordered.
+
+        Args:
+            fields (Iterable[str]): A list or tuple of field names to order by.
+                Prefix a field with '-' to order in descending order.
+                Example: ['name', '-age'] will order by name ASC, then age DESC.
+        """
+        self._order_by_fields = list(fields)
+
+    def build_select_query(self, table_name: str) -> str:
+        """
+        Build a SQL SELECT query string based on selected fields,
+        conditions (equal and not equal), and ordering.
+
+        Args:
+            table_name (str): The name of the database table to query.
+
+        Returns:
+            str: A complete SQL SELECT query string.
+        """
+        fields = ", ".join(self.select_fields) if self.select_fields != '*' else '*'
+        query = f"SELECT {fields} FROM {table_name}"
+
+        conditions = []
+        for key, value in self.equal:
+            conditions.append(f"{key} = '{value}'")
+        for key, value in self.not_equal:
+            conditions.append(f"{key} != '{value}'")
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        if self._order_by_fields:
+            ordering = ", ".join(
+                [
+                    f"{field.lstrip('-')} DESC" if field.startswith('-') else f"{field} ASC"
+                    for field in self._order_by_fields
+                ]
+            )
+            query += f" ORDER BY {ordering}"
+
+        return query + ";"
+
     def _dict_to_tuple(self, *, data: dict[str, str]) -> tuple[tuple[str, Any], ...]:
         """
         Converts a dictionary to a tuple of tuples.
@@ -248,27 +291,3 @@ class QueryBuilder:
         """
 
         return tuple((key, value) for key, value in data.items())
-    
-    def set_ordering(self, fields: 'Iterable[str]') -> None:
-        self._order_by_fields = list(fields)
-
-    def build_select_query(self, table_name: str) -> str:
-        fields = ", ".join(self.select_fields) if self.select_fields != '*' else '*'
-        query = f"SELECT {fields} FROM {table_name}"
-    
-        conditions = []
-        for key, value in self.equal:
-            conditions.append(f"{key} = '{value}'")
-        for key, value in self.not_equal:
-            conditions.append(f"{key} != '{value}'")
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-    
-        if self._order_by_fields:
-            ordering = ", ".join([
-                f"{field.lstrip('-')} DESC" if field.startswith('-') else f"{field} ASC"
-                for field in self._order_by_fields
-            ])
-            query += f" ORDER BY {ordering}"
-    
-        return query + ";"

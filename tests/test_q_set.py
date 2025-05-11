@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from supadantic.q_set import QSet
+from supadantic.query_builder import QueryBuilder
 
 
 if TYPE_CHECKING:
@@ -149,3 +150,33 @@ class TestQSet:
         assert QSet(model_class=model_mock).filter(age=21).exists()
         assert not QSet(model_class=model_mock).filter(name='test', age=12).exists()
         assert not QSet(model_class=model_mock).filter(name='foo', age=21).exists()
+
+    def test_order_by_valid_fields(self, qset, query_builder):
+        qset.order_by('name', '-age')
+        query_builder.set_ordering.assert_called_once_with(('name', '-age'))
+
+    def test_order_by_invalid_field_raises(self, qset):
+        with pytest.raises(qset.InvalidField) as exc_info:
+            qset.order_by('invalid_field')
+        assert "Invalid field invalid_field!" in str(exc_info.value)
+
+    def test_order_by_sets_order_in_select_query(self):
+        qb = QueryBuilder()
+        qb.set_select_fields(('*',))
+        qb.set_equal(age=30)
+        qb.set_ordering(['name', '-age'])
+
+        query = qb.build_select_query('users')
+        assert "ORDER BY name ASC, age DESC" in query
+
+
+@pytest.fixture
+def query_builder(mocker):
+    return mocker.Mock(spec=QueryBuilder)
+
+
+@pytest.fixture
+def qset(model_mock, query_builder):
+    qs = QSet(model_class=model_mock)
+    qs._query_builder = query_builder
+    return qs

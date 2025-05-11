@@ -403,6 +403,26 @@ class QSet(Generic[_M]):
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} {list(self)} >'
 
+    def order_by(self, *fields: str) -> 'QSet[_M]':
+        """
+        Specifies the ordering of the query results based on the provided field names.
+
+        Args:
+            *fields (str): Field names to order by. Prefix with '-' for descending order.
+                           For example: 'name', '-age'
+
+        Returns:
+            QSet: A new QSet instance with the ordering applied.
+        """
+        for field in fields:
+            field_name = field.lstrip('-')
+            if field_name not in self._model_class.model_fields:
+                raise self.InvalidField(f'Invalid field {field_name}!')
+
+        self._query_builder.set_ordering(fields)
+
+        return self._copy()
+
     def __eq__(self, obj: object) -> bool:
         return all(
             (
@@ -410,15 +430,3 @@ class QSet(Generic[_M]):
                 self._cache == getattr(obj, '_cache'),
             )
         )
-    
-    def order_by(self, *fields: str) -> 'QSet[_M]':
-        # Validate fields
-        for field in fields:
-            field_name = field.lstrip('-')
-            if field_name not in self._model_class.model_fields:
-                raise self.InvalidField(f'Invalid field {field_name}!')
-
-        # Set ordering in the query builder
-        self._query_builder.set_ordering(fields)
-
-        return self._copy()
