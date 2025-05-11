@@ -329,6 +329,24 @@ class QSet(Generic[_M]):
             new_obj = self.create(**kwargs)
             return new_obj, True
 
+    def exists(self) -> bool:
+        """
+        Checks if any objects match the current query.
+
+        Returns:
+            (bool): True if matching objects exist, False otherwise.
+
+        Examples:
+            >>> if Model.objects.filter(name='example').exists():
+            ...     print("Objects with name 'example' exist!")
+        """
+
+        if self._cache is not None:
+            return bool(self._cache)
+
+        result = self.client.execute(query_builder=self._query_builder)
+        return bool(result)
+
     def _execute(self) -> None:
         """
         Executes the query and populates the cache with the results.
