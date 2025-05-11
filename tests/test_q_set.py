@@ -137,3 +137,15 @@ class TestQSet:
         assert created_obj.id is not None
         assert created_obj.name == 'create'
         assert created_obj.age == 23
+
+    def test_exists(self, model_mock: type['ModelMock']):
+        model_mock.objects.all().delete()
+        assert not QSet(model_class=model_mock).exists()
+
+        model_mock(name='test', age=21).save()
+
+        assert QSet(model_class=model_mock).exists()
+        assert QSet(model_class=model_mock).filter(name='test').exists()
+        assert QSet(model_class=model_mock).filter(age=21).exists()
+        assert not QSet(model_class=model_mock).filter(name='test', age=12).exists()
+        assert not QSet(model_class=model_mock).filter(name='foo', age=21).exists()
