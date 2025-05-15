@@ -46,7 +46,7 @@ class TestQSet:
         )
 
         # Execution
-        actual_q_set = model_mock.objects.filter(name='test_name')
+        actual_q_set = model_mock.objects.filter(name='test_name', id__lte=3)
         actual_q_set._execute()
 
         # Testing
