@@ -143,7 +143,7 @@ class SupabaseClient(BaseClient):
 
     def _add_filters(self, *, query_builder: 'QueryBuilder') -> 'BaseFilterRequestBuilder':
         """
-        Adds equality and non-equality filters to the query based on the query builder.
+        Adds filters to the query based on the query builder.
 
         Args:
             query_builder (QueryBuilder): The QueryBuilder instance specifying
@@ -159,6 +159,7 @@ class SupabaseClient(BaseClient):
 
         equal = query_builder.equal
         not_equal = query_builder.not_equal
+        less_than_or_equal = query_builder.less_than_or_equal
 
         for equal_filter in equal:
             _query = _query.eq(*equal_filter)
@@ -166,4 +167,6 @@ class SupabaseClient(BaseClient):
         for not_equal_filter in not_equal:
             _query = _query.neq(*not_equal_filter)
 
+        for lte_filter in less_than_or_equal:
+            _query = _query.lte(*lte_filter)
         return _query
