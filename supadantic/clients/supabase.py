@@ -34,8 +34,8 @@ class SupabaseClient(BaseClient):
         """
 
         super().__init__(table_name=table_name)
-        url: str = os.getenv('SUPABASE_URL') or ''
-        key: str = os.getenv('SUPABASE_KEY') or ''
+        url: str = os.getenv('SUPABASE_URL', default='')
+        key: str = os.getenv('SUPABASE_KEY', default='')
         supabase_client = create_client(url, key)
         self.query = supabase_client.table(table_name=self.table_name)
 
