@@ -33,6 +33,7 @@ class QueryBuilder:
         self._select_fields: tuple[str, ...] | None = None
         self._equal: tuple[tuple[str, Any], ...] = ()
         self._not_equal: tuple[tuple[str, Any], ...] = ()
+        self._less_than_or_equal: tuple[tuple[str, Any], ...] = ()
         self._insert_data: dict[str, Any] | None = None
         self._update_data: dict[str, Any] | None = None
         self._delete_mode: bool = False
@@ -78,6 +79,18 @@ class QueryBuilder:
         """
 
         return self._not_equal
+
+    @property
+    def less_than_or_equal(self) -> tuple[tuple[str, Any], ...]:
+        """
+        Gets the less than or equal filters for the query.
+
+        Returns:
+            (tuple[tuple[str, Any], ...]): A tuple of tuples, where each inner tuple contains a field name and
+                                           its desired value for non-equality filtering.
+        """
+
+        return self._less_than_or_equal
 
     @property
     def insert_data(self) -> dict[str, Any] | None:
@@ -188,6 +201,19 @@ class QueryBuilder:
         """
 
         self._not_equal += self._dict_to_tuple(data=kwargs)
+
+    def set_less_than_or_equal(self, **kwargs) -> None:
+        """
+        Sets the less than or equal filters for the query.
+
+        This method accepts keyword arguments representing the non-equality filters
+        and appends them to the existing set of less than or equal filters.
+
+        Args:
+            **kwargs: Key-value pairs where keys are field names and values are the values to exclude.
+        """
+
+        self._less_than_or_equal += self._dict_to_tuple(data=kwargs)
 
     def set_insert_data(self, data: dict[str, Any]) -> None:
         """
