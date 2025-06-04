@@ -133,15 +133,14 @@ class QSet(Generic[_M]):
         self._validate_filters(**filters)
 
         for filter_field, value in filters.items():
-            filter_type = filter_field.split("__")  # e.g. id__lte
+            filter_type = filter_field.split("__")
 
-            _filters = {filter_type[0]: value}  # type: ignore
+            _filters = {filter_type[0]: value}
 
             if len(filter_type) == 1:
                 self._query_builder.set_equal(**_filters)
             elif filter_type[1] == "lte":
                 self._query_builder.set_less_than_or_equal(**_filters)
-            _filters = None  # type: ignore
 
         return self._copy()
 
@@ -366,7 +365,6 @@ class QSet(Generic[_M]):
         """
 
         for filter_name in filters.keys():
-            # field__lte, field__lt, field__gte, field__gt or just field
             if filter_name.split("__")[0] not in self._model_class.model_fields.keys():
                 raise self.InvalidFilter(f'Invalid filter {filter_name}!')
 
