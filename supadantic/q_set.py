@@ -141,6 +141,8 @@ class QSet(Generic[_M]):
                 self._query_builder.set_equal(**_filters)
             elif filter_type[1] == "lte":
                 self._query_builder.set_less_than_or_equal(**_filters)
+            elif filter_type[1] == "gt":
+                self._query_builder.set_greater_than(**_filters)
 
         return self._copy()
 
