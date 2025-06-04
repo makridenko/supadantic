@@ -46,7 +46,25 @@ class TestQSet:
         )
 
         # Execution
-        actual_q_set = model_mock.objects.filter(name='test_name')
+        actual_q_set = model_mock.objects.filter(name='test_name', id__lte=3)
+        actual_q_set._execute()
+
+        # Testing
+        assert actual_q_set == expected_q_set
+
+    def test_greater_than_filter(self, model_mock: type['ModelMock']):
+        # Prepare data
+        expected_q_set = QSet(
+            model_class=model_mock,
+            cache=[
+                model_mock(id=2, name="unique_name"),
+                model_mock(id=3, name="test_name"),
+                model_mock(id=4, name="new_name"),
+            ],
+        )
+
+        # Execution
+        actual_q_set = model_mock.objects.filter(id__gt=1)
         actual_q_set._execute()
 
         # Testing
@@ -68,6 +86,48 @@ class TestQSet:
 
         # Testing
         assert actual_q_set == expected_q_set
+
+    def test_exclude_less_than_or_equal(self, model_mock: type['ModelMock']):
+        # Prepare data
+        expected_q_set = QSet(
+            model_class=model_mock,
+            cache=[
+                model_mock(id=3, name='test_name'),
+                model_mock(id=4, name='new_name'),
+            ],
+        )
+
+        # Execution
+        actual_q_set = model_mock.objects.exclude(id__lte=2)
+        actual_q_set._execute()
+
+        filtered_q_set = model_mock.objects.filter(id__gt=2)
+        filtered_q_set._execute()
+
+        # Testing
+        assert actual_q_set == expected_q_set
+        assert actual_q_set == filtered_q_set
+
+    def test_exclude_greater_than(self, model_mock: type['ModelMock']):
+        # Prepare data
+        expected_q_set = QSet(
+            model_class=model_mock,
+            cache=[
+                model_mock(id=1, name='test_name'),
+                model_mock(id=2, name='unique_name'),
+            ],
+        )
+
+        # Execution
+        actual_q_set = model_mock.objects.exclude(id__gt=2)
+        actual_q_set._execute()
+
+        filtered_q_set = model_mock.objects.filter(id__lte=2)
+        filtered_q_set._execute()
+
+        # Testing
+        assert actual_q_set == expected_q_set
+        assert actual_q_set == filtered_q_set
 
     def test_filters_with_wrong_field(self, model_mock: type['ModelMock']):
         with pytest.raises(QSet.InvalidFilter, match='Invalid filter'):

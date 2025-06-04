@@ -41,6 +41,28 @@ class TestQueryBuilder:
         assert query_builder.not_equal == (('test', 'bar'), ('foo', 'bar'))
         assert query_builder.mode == QueryBuilder.Mode.FILTER_MODE
 
+    def test_less_than_or_equal(self):
+        query_builder = QueryBuilder()
+        assert query_builder.less_than_or_equal == ()
+
+        query_builder.set_less_than_or_equal(id__lte=4)
+        assert query_builder.less_than_or_equal == (('id__lte', 4),)
+
+        query_builder.set_less_than_or_equal(age__lte=18)
+        assert query_builder.less_than_or_equal == (('id__lte', 4), ('age__lte', 18))
+        assert query_builder.mode == QueryBuilder.Mode.FILTER_MODE
+
+    def test_greater_than(self):
+        query_builder = QueryBuilder()
+        assert query_builder.greater_than == ()
+
+        query_builder.set_greater_than(id__gt=4)
+        assert query_builder.greater_than == (('id__gt', 4),)
+
+        query_builder.set_greater_than(age__gt=18)
+        assert query_builder.greater_than == (('id__gt', 4), ('age__gt', 18))
+        assert query_builder.mode == QueryBuilder.Mode.FILTER_MODE
+
     def test_insert_data(self):
         query_builder = QueryBuilder()
         assert query_builder.insert_data is None
