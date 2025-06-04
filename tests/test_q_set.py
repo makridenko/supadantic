@@ -101,8 +101,12 @@ class TestQSet:
         actual_q_set = model_mock.objects.exclude(id__lte=2)
         actual_q_set._execute()
 
+        filtered_q_set = model_mock.objects.filter(id__gt=2)
+        filtered_q_set._execute()
+
         # Testing
         assert actual_q_set == expected_q_set
+        assert actual_q_set == filtered_q_set
 
     def test_exclude_greater_than(self, model_mock: type['ModelMock']):
         # Prepare data
@@ -118,8 +122,12 @@ class TestQSet:
         actual_q_set = model_mock.objects.exclude(id__gt=2)
         actual_q_set._execute()
 
+        filtered_q_set = model_mock.objects.filter(id__lte=2)
+        filtered_q_set._execute()
+
         # Testing
         assert actual_q_set == expected_q_set
+        assert actual_q_set == filtered_q_set
 
     def test_filters_with_wrong_field(self, model_mock: type['ModelMock']):
         with pytest.raises(QSet.InvalidFilter, match='Invalid filter'):
