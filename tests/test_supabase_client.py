@@ -89,9 +89,8 @@ class TestSupabaseClient:
     def test_filter(self, supabase_client: SupabaseClient):
         # Prepare data
         mock_supabase_query = Mock()
-        mock_supabase_query.select.return_value.eq.return_value.neq.return_value.lte.return_value.execute.return_value.data = [  # noqa: E501
-            {'test': 'data'}
-        ]
+        mock_exec = mock_supabase_query.select.return_value.eq.return_value.neq.return_value.lte.return_value.execute
+        mock_exec.return_value.data = [{'test': 'data'}]
         supabase_client.query = mock_supabase_query
 
         query_builder = QueryBuilder()
@@ -108,7 +107,8 @@ class TestSupabaseClient:
         mock_supabase_query.select.return_value.eq.return_value.neq.return_value.lte.assert_called_once_with(
             'id__lte', 3
         )
-        mock_supabase_query.select.return_value.eq.return_value.neq.return_value.lte.return_value.execute.assert_called_once()  # noqa: E501
+        mock_exec = mock_supabase_query.select.return_value.eq.return_value.neq.return_value.lte.return_value.execute
+        mock_exec.assert_called_once()
 
         assert result == [{'test': 'data'}]
 
