@@ -87,7 +87,7 @@ class QueryBuilder:
 
         Returns:
             (tuple[tuple[str, Any], ...]): A tuple of tuples, where each inner tuple contains a field name and
-                                           its desired value for non-equality filtering.
+                                           its desired value for less than or equal filtering.
         """
 
         return self._less_than_or_equal
@@ -206,7 +206,7 @@ class QueryBuilder:
         """
         Sets the less than or equal filters for the query.
 
-        This method accepts keyword arguments representing the non-equality filters
+        This method accepts keyword arguments representing the less than or equal filters
         and appends them to the existing set of less than or equal filters.
 
         Args:
