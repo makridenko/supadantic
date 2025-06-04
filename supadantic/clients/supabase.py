@@ -160,6 +160,7 @@ class SupabaseClient(BaseClient):
         equal = query_builder.equal
         not_equal = query_builder.not_equal
         less_than_or_equal = query_builder.less_than_or_equal
+        greater_than = query_builder.greater_than
 
         for equal_filter in equal:
             _query = _query.eq(*equal_filter)
@@ -169,4 +170,8 @@ class SupabaseClient(BaseClient):
 
         for lte_filter in less_than_or_equal:
             _query = _query.lte(*lte_filter)
+
+        for gt_filter in greater_than:
+            _query = _query.gt(*gt_filter)
+
         return _query
