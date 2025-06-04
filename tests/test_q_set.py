@@ -52,6 +52,24 @@ class TestQSet:
         # Testing
         assert actual_q_set == expected_q_set
 
+    def test_greater_than_filter(self, model_mock: type['ModelMock']):
+        # Prepare data
+        expected_q_set = QSet(
+            model_class=model_mock,
+            cache=[
+                model_mock(id=2, name="unique_name"),
+                model_mock(id=3, name="test_name"),
+                model_mock(id=4, name="new_name"),
+            ],
+        )
+
+        # Execution
+        actual_q_set = model_mock.objects.filter(id__gt=1)
+        actual_q_set._execute()
+
+        # Testing
+        assert actual_q_set == expected_q_set
+
     def test_exclude(self, model_mock: type['ModelMock']):
         # Prepare data
         expected_q_set = QSet(
