@@ -164,7 +164,18 @@ class QSet(Generic[_M]):
         """
 
         self._validate_filters(**filters)
-        self._query_builder.set_not_equal(**filters)
+        for filter_field, value in filters.items():
+            filter_type = filter_field.split("__")
+
+            _filters = {filter_type[0]: value}
+
+            if len(filter_type) == 1:
+                self._query_builder.set_not_equal(**_filters)
+            elif filter_type[1] == "lte":
+                self._query_builder.set_greater_than(**_filters)
+            elif filter_type[1] == "gt":
+                self._query_builder.set_less_than_or_equal(**_filters)
+
         return self._copy()
 
     def get(self, **filters: Any) -> _M:
