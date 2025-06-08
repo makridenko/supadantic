@@ -35,6 +35,8 @@ class QueryBuilder:
         self._not_equal: tuple[tuple[str, Any], ...] = ()
         self._less_than_or_equal: tuple[tuple[str, Any], ...] = ()
         self._greater_than: tuple[tuple[str, Any], ...] = ()
+        self._less_than: tuple[tuple[str, Any], ...] = ()
+        self._greater_than_or_equal: tuple[tuple[str, Any], ...] = ()
         self._insert_data: dict[str, Any] | None = None
         self._update_data: dict[str, Any] | None = None
         self._delete_mode: bool = False
@@ -104,6 +106,30 @@ class QueryBuilder:
         """
 
         return self._greater_than
+
+    @property
+    def less_than(self) -> tuple[tuple[str, Any], ...]:
+        """
+        Gets the less than filters for the query.
+
+        Returns:
+            (tuple[tuple[str, Any], ...]): A tuple of tuples, where each inner tuple contains a field name and
+                                           its desired value for less than filtering.
+        """
+
+        return self._less_than
+
+    @property
+    def greater_than_or_equal(self) -> tuple[tuple[str, Any], ...]:
+        """
+        Gets the greater than or equal filters for the query.
+
+        Returns:
+            (tuple[tuple[str, Any], ...]): A tuple of tuples, where each inner tuple contains a field name and
+                                           its desired value for greater than or equal filtering.
+        """
+
+        return self._greater_than_or_equal
 
     @property
     def insert_data(self) -> dict[str, Any] | None:
@@ -240,6 +266,32 @@ class QueryBuilder:
         """
 
         self._greater_than += self._dict_to_tuple(data=kwargs)
+
+    def set_less_than(self, **kwargs) -> None:
+        """
+        Sets the less than filters for the query.
+
+        This method accepts keyword arguments representing the less than filters
+        and appends them to the existing set of less than filters.
+
+        Args:
+            **kwargs: Key-value pairs where keys are field names and values are the values to exclude.
+        """
+
+        self._less_than += self._dict_to_tuple(data=kwargs)
+
+    def set_greater_than_or_equal(self, **kwargs) -> None:
+        """
+        Sets the greater than or equal filters for the query.
+
+        This method accepts keyword arguments representing the greater than or equal filters
+        and appends them to the existing set of greater than or equal filters.
+
+        Args:
+            **kwargs: Key-value pairs where keys are field names and values are the values to exclude.
+        """
+
+        self._greater_than_or_equal += self._dict_to_tuple(data=kwargs)
 
     def set_insert_data(self, data: dict[str, Any]) -> None:
         """
