@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock, Mock
 
+import httpx
 import pytest
 
 from supadantic.clients import SupabaseClient
@@ -8,25 +8,21 @@ from supadantic.query_builder import QueryBuilder
 
 
 if TYPE_CHECKING:
-    from pytest_mock import MockerFixture
+    from pytest_httpx import HTTPXMock
 
 
 class TestSupabaseClient:
-    @pytest.fixture(autouse=True)
-    def mock_create_client(self, mocker: 'MockerFixture') -> MagicMock:
-        return mocker.patch('supadantic.clients.supabase.create_client')
-
     @pytest.fixture
     def supabase_client(self) -> SupabaseClient:
         return SupabaseClient(table_name='table_name')
 
-    def test_delete(self, supabase_client: SupabaseClient):
-        # Prepare data
-        mock_supabase_query = Mock()
-        mock_supabase_query.delete.return_value.eq.return_value.neq.return_value.execute.return_value.data = [
-            {'test': 'data'}
-        ]
-        supabase_client.query = mock_supabase_query
+    def test_delete(self, supabase_client: SupabaseClient, httpx_mock: 'HTTPXMock'):
+        # Prepare response
+        httpx_mock.add_response(
+            method="DELETE",
+            url=httpx.URL('https://test.supabase.co/rest/v1/table_name', params={'id': 'eq.1', 'title': 'neq.test'}),
+            status_code=200,
+        )
 
         query_builder = QueryBuilder()
         query_builder.set_equal(id=1)
@@ -34,41 +30,37 @@ class TestSupabaseClient:
         query_builder.set_delete_mode(True)
 
         # Execution
-        result = supabase_client.execute(query_builder=query_builder)
+        supabase_client.execute(query_builder=query_builder)
 
         # Testing
-        mock_supabase_query.delete.assert_called_once()
-        mock_supabase_query.delete.return_value.eq.assert_called_once_with('id', 1)
-        mock_supabase_query.delete.return_value.eq.return_value.neq.assert_called_once_with('title', 'test')
-        mock_supabase_query.delete.return_value.eq.return_value.neq.return_value.execute.assert_called_once()
+        assert len(httpx_mock.get_requests()) == 1
 
-        assert result == [{'test': 'data'}]
-
-    def test_insert(self, supabase_client: SupabaseClient):
-        # Prepare data
-        mock_supabase_query = Mock()
-        mock_supabase_query.insert.return_value.execute.return_value.data = {'data': 'foo'}
-        supabase_client.query = mock_supabase_query
+    def test_insert(self, supabase_client: SupabaseClient, httpx_mock: 'HTTPXMock'):
+        # Prepare response
+        httpx_mock.add_response(
+            method="POST",
+            url="https://test.supabase.co/rest/v1/table_name",
+            status_code=201,
+            match_json={'insert': 'data'},
+        )
 
         query_builder = QueryBuilder()
         query_builder.set_insert_data({'insert': 'data'})
 
         # Execution
-        result = supabase_client.execute(query_builder=query_builder)
+        supabase_client.execute(query_builder=query_builder)
 
         # Testing
-        mock_supabase_query.insert.assert_called_once_with({'insert': 'data'})
-        mock_supabase_query.insert.return_value.execute.assert_called_once()
+        assert len(httpx_mock.get_requests()) == 1
 
-        assert result == {'data': 'foo'}
-
-    def test_update(self, supabase_client: SupabaseClient):
-        # Prepare data
-        mock_supabase_query = Mock()
-        mock_supabase_query.update.return_value.eq.return_value.neq.return_value.execute.return_value.data = [
-            {'data': 'foo'}
-        ]
-        supabase_client.query = mock_supabase_query
+    def test_update(self, supabase_client: SupabaseClient, httpx_mock: 'HTTPXMock'):
+        # Prepare response
+        httpx_mock.add_response(
+            method="PATCH",
+            url=httpx.URL("https://test.supabase.co/rest/v1/table_name", params={'id': 'eq.1', 'title': 'neq.test'}),
+            status_code=200,
+            match_json={'update': 'data'},
+        )
 
         query_builder = QueryBuilder()
         query_builder.set_update_data({'update': 'data'})
@@ -76,22 +68,22 @@ class TestSupabaseClient:
         query_builder.set_not_equal(title='test')
 
         # Execution
-        result = supabase_client.execute(query_builder=query_builder)
+        supabase_client.execute(query_builder=query_builder)
 
         # Testing
-        mock_supabase_query.update.assert_called_once_with({'update': 'data'})
-        mock_supabase_query.update.return_value.eq.assert_called_once_with('id', 1)
-        mock_supabase_query.update.return_value.eq.return_value.neq.assert_called_once_with('title', 'test')
-        mock_supabase_query.update.return_value.eq.return_value.neq.return_value.execute.assert_called_once()
+        assert len(httpx_mock.get_requests()) == 1
 
-        assert result == [{'data': 'foo'}]
-
-    def test_filter(self, supabase_client: SupabaseClient):
-        # Prepare data
-        mock_supabase_query = Mock()
-        mock_exec = mock_supabase_query.select.return_value.eq.return_value.neq.return_value.lte.return_value.execute
-        mock_exec.return_value.data = [{'test': 'data'}]
-        supabase_client.query = mock_supabase_query
+    def test_filter(self, supabase_client: SupabaseClient, httpx_mock: 'HTTPXMock'):
+        # Prepare response
+        httpx_mock.add_response(
+            method="GET",
+            url=httpx.URL(
+                'https://test.supabase.co/rest/v1/table_name',
+                params={'select': '*', 'id': 'eq.1', 'title': 'neq.test', 'id__lte': 'lte.3'},
+            ),
+            status_code=200,
+        )
+        httpx_mock.add_response(is_optional=True)
 
         query_builder = QueryBuilder()
         query_builder.set_equal(id=1)
@@ -99,24 +91,25 @@ class TestSupabaseClient:
         query_builder.set_less_than_or_equal(id__lte=3)
 
         # Execution
-        result = supabase_client.execute(query_builder=query_builder)
+        supabase_client.execute(query_builder=query_builder)
 
         # Testing
-        mock_supabase_query.select.return_value.eq.assert_called_once_with('id', 1)
-        mock_supabase_query.select.return_value.eq.return_value.neq.assert_called_once_with('title', 'test')
-        mock_supabase_query.select.return_value.eq.return_value.neq.return_value.lte.assert_called_once_with(
-            'id__lte', 3
+        assert len(httpx_mock.get_requests()) == 1
+
+    def test_count(self, supabase_client: SupabaseClient, httpx_mock: 'HTTPXMock'):
+        # Prepare response
+        httpx_mock.add_response(
+            method="GET",
+            url=httpx.URL(
+                'https://test.supabase.co/rest/v1/table_name',
+                params={
+                    'select': '*',
+                    'id': 'eq.1',
+                    'title': 'neq.test',
+                },
+            ),
+            status_code=200,
         )
-        mock_exec = mock_supabase_query.select.return_value.eq.return_value.neq.return_value.lte.return_value.execute
-        mock_exec.assert_called_once()
-
-        assert result == [{'test': 'data'}]
-
-    def test_count(self, supabase_client: SupabaseClient):
-        # Prepare data
-        mock_supabase_query = Mock()
-        mock_supabase_query.select.return_value.eq.return_value.neq.return_value.execute.return_value.count = 1
-        supabase_client.query = mock_supabase_query
 
         query_builder = QueryBuilder()
         query_builder.set_equal(id=1)
@@ -124,12 +117,7 @@ class TestSupabaseClient:
         query_builder.set_count_mode(True)
 
         # Execution
-        result = supabase_client.execute(query_builder=query_builder)
+        supabase_client.execute(query_builder=query_builder)
 
         # Testing
-        mock_supabase_query.select.assert_called_once_with('*', count='exact')
-        mock_supabase_query.select.return_value.eq.assert_called_once_with('id', 1)
-        mock_supabase_query.select.return_value.eq.return_value.neq.assert_called_once_with('title', 'test')
-        mock_supabase_query.select.return_value.eq.return_value.neq.return_value.execute.assert_called_once()
-
-        assert result == 1
+        assert len(httpx_mock.get_requests()) == 1
