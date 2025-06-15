@@ -300,7 +300,10 @@ class QSet(Generic[_M]):
 
         for field in data.keys():
             if field not in self._model_class.model_fields.keys():
-                raise self.InvalidField(f'Invalid field {field}!')
+                raise self.InvalidField(
+                    f"Field '{field}' is not defined for {self._model_class.__name__} model."
+                    f"Available fields are: {', '.join(self._model_class.model_fields.keys())}"
+                )
 
         self._query_builder.set_update_data(data)
         self._execute()
@@ -323,7 +326,10 @@ class QSet(Generic[_M]):
 
         for field in data.keys():
             if field not in self._model_class.model_fields.keys():
-                raise self.InvalidField(f'Invalid field {field}!')
+                raise self.InvalidField(
+                    f"Field '{field}' is not defined for {self._model_class.__name__} model."
+                    f"Available fields are: {', '.join(self._model_class.model_fields.keys())}"
+                )
 
         self._query_builder.set_insert_data(data)
         response_data = self.client.execute(query_builder=self._query_builder)

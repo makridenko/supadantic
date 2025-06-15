@@ -227,14 +227,22 @@ class TestQSet:
         assert model_mock.objects.filter(name='test_name').update(name='_test_name') == 2
 
     def test_update_with_invalid_field(self, model_mock: type['ModelMock']):
-        with pytest.raises(QSet.InvalidField, match='Invalid field'):
+        with pytest.raises(
+            QSet.InvalidField,
+            match="Field 'foo' is not defined for ModelMock model."
+            "Available fields are: id, name, age, some_optional_list, some_optional_tuple",
+        ):
             model_mock.objects.filter(name='name').update(foo='bar')
 
     def test_create(self, model_mock: type['ModelMock']):
         assert model_mock.objects.create(name='new_name') == model_mock(id=5, name='new_name')
 
     def test_create_with_invalid_field(self, model_mock: type['ModelMock']):
-        with pytest.raises(QSet.InvalidField, match='Invalid field'):
+        with pytest.raises(
+            QSet.InvalidField,
+            match="Field 'foo' is not defined for ModelMock model."
+            "Available fields are: id, name, age, some_optional_list, some_optional_tuple",
+        ):
             model_mock.objects.create(foo='bar')
 
     def test_delete(self, model_mock: type['ModelMock']):
