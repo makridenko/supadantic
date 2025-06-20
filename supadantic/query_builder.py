@@ -36,6 +36,7 @@ class QueryBuilder:
         self._less_than_or_equal: tuple[tuple[str, Any], ...] = ()
         self._greater_than: tuple[tuple[str, Any], ...] = ()
         self._less_than: tuple[tuple[str, Any], ...] = ()
+        self._included: tuple[tuple[str, Any], ...] = ()
         self._greater_than_or_equal: tuple[tuple[str, Any], ...] = ()
         self._insert_data: dict[str, Any] | None = None
         self._update_data: dict[str, Any] | None = None
@@ -130,6 +131,18 @@ class QueryBuilder:
         """
 
         return self._greater_than_or_equal
+
+    @property
+    def included(self) -> tuple[tuple[str, Any], ...]:
+        """
+        Gets the included filter values for the query.
+
+        Returns:
+            (tuple[tuple[str, Any], ...]): A tuple of tuples, where each inner tuple contains a field name and
+                                           its desired value for included filtering.
+        """
+
+        return self._included
 
     @property
     def insert_data(self) -> dict[str, Any] | None:
@@ -292,6 +305,19 @@ class QueryBuilder:
         """
 
         self._greater_than_or_equal += self._dict_to_tuple(data=kwargs)
+
+    def set_included(self, **kwargs) -> None:
+        """
+        Sets the included filter values for the query.
+
+        This method accepts keyword arguments representing the include filters
+        and appends them to the existing set of included filter values.
+
+        Args:
+            **kwargs: Key-value pairs where keys are field names and values are the values to exclude.
+        """
+
+        self._included += self._dict_to_tuple(data=kwargs)
 
     def set_insert_data(self, data: dict[str, Any]) -> None:
         """
