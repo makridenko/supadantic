@@ -170,6 +170,7 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
         greater_than_filters: dict[str, Any] = dict(pair for pair in query_builder.greater_than)
         less_than_filters: dict[str, Any] = dict(pair for pair in query_builder.less_than)
         greater_than_or_equal_filters: dict[str, Any] = dict(pair for pair in query_builder.greater_than_or_equal)
+        included_filters: dict[str, Any] = dict(pair for pair in query_builder.included)
 
         def _lambda_filter(obj: dict[str, Any]) -> bool:
             """Filter the records based on the equality and non-equality filters."""
@@ -181,6 +182,7 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
                     all(obj[key] > value for key, value in greater_than_filters.items()),
                     all(obj[key] < value for key, value in less_than_filters.items()),
                     all(obj[key] >= value for key, value in greater_than_or_equal_filters.items()),
+                    all(obj[key] in value for key, value in included_filters.items()),
                 )
             )
 

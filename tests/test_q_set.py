@@ -35,6 +35,23 @@ class TestQSet:
         # Testing
         assert actual_q_set == expected_q_set
 
+    def test_include_filter(self, model_mock: type['ModelMock']):
+        # Prepare data
+        expected_q_set = QSet(
+            model_class=model_mock,
+            cache=[
+                model_mock(id=1, name='test_name'),
+                model_mock(id=3, name='test_name'),
+            ],
+        )
+
+        # Execution
+        actual_q_set = model_mock.objects.filter(id__in=[1, 3])
+        actual_q_set._execute()
+
+        # Testing
+        assert actual_q_set == expected_q_set
+
     def test_filter(self, model_mock: type['ModelMock']):
         # Prepare data
         expected_q_set = QSet(
