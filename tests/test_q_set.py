@@ -302,3 +302,26 @@ class TestQSet:
         assert QSet(model_class=model_mock).filter(age=21).exists()
         assert not QSet(model_class=model_mock).filter(name='test', age=12).exists()
         assert not QSet(model_class=model_mock).filter(name='foo', age=21).exists()
+
+    def test_order_by(self, model_mock: type['ModelMock']):
+        # Arrange
+        model_mock.objects.all().delete()
+        assert not QSet(model_class=model_mock).exists()
+
+        model_mock(name='test', age=2).save()
+        model_mock(name='test', age=3).save()
+        model_mock(name='test', age=1).save()
+        model_mock(name='test', age=4).save()
+
+        # Assert
+        assert (
+            QSet(model_class=model_mock).order_by('age').first() == QSet(model_class=model_mock).filter(age=1).first()
+        )
+        assert QSet(model_class=model_mock).order_by('age').last() == QSet(model_class=model_mock).filter(age=4).last()
+
+        assert (
+            QSet(model_class=model_mock).order_by('-age').first() == QSet(model_class=model_mock).filter(age=4).first()
+        )
+        assert (
+            QSet(model_class=model_mock).order_by('-age').last() == QSet(model_class=model_mock).filter(age=1).first()
+        )

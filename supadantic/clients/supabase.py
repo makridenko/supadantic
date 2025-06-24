@@ -139,6 +139,9 @@ class SupabaseClient(BaseClient):
             _query = self.query.select(*query_builder.select_fields, count=count)
         else:
             _query = self.query.select(*query_builder.select_fields)
+            if query_builder.order_by_field:
+                column, desc = query_builder.order_by_field
+                _query = _query.order(column=column, desc=desc)
         return _query
 
     def _add_filters(self, *, query_builder: 'QueryBuilder') -> 'BaseFilterRequestBuilder':

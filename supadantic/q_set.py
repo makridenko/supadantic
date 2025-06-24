@@ -386,6 +386,36 @@ class QSet(Generic[_M]):
         result = self.client.execute(query_builder=self._query_builder)
         return bool(result)
 
+    def order_by(self, key: str) -> 'QSet[_M]':
+        """
+        Orders the query results by the specified field.
+
+        This method sets the ordering of the query results based on the provided key.
+        The key can be prefixed with '-' to indicate descending order.
+
+        Args:
+            key (str): The field name to order by. Prefix with '-' for descending order.
+
+        Returns:
+            (QSet[_M]): A new QSet instance with the ordering applied.
+
+        Examples:
+            >>> # Order by name ascending
+            >>> qs = Model.objects.order_by('name')
+            >>> # Order by age descending
+            >>> qs = Model.objects.order_by('-age')
+
+        Raises:
+            InvalidField: If the specified field does not exist in the model.
+        """
+
+        column = key.split('-')[-1]
+        if column not in self._model_class.model_fields.keys():
+            raise self.InvalidField(f'Invalid field {column}!')
+
+        self._query_builder.set_order_by_field(key)
+        return self._copy()
+
     def _execute(self) -> None:
         """
         Executes the query and populates the cache with the results.

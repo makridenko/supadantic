@@ -121,3 +121,26 @@ class TestSupabaseClient:
 
         # Testing
         assert len(httpx_mock.get_requests()) == 1
+
+    def test_order_by(self, supabase_client: SupabaseClient, httpx_mock: 'HTTPXMock'):
+        # Arrange
+        httpx_mock.add_response(
+            method='GET',
+            url=httpx.URL(
+                'https://test.supabase.co/rest/v1/table_name',
+                params={'select': '*', 'title': 'neq.test', 'id__lte': 'lte.3', 'order': 'title.desc'},
+            ),
+            status_code=200,
+        )
+        httpx_mock.add_response(is_optional=True)
+
+        query_buider = QueryBuilder()
+        query_buider.set_not_equal(title='test')
+        query_buider.set_less_than_or_equal(id__lte=3)
+        query_buider.set_order_by_field('-title')
+
+        # Act
+        supabase_client.execute(query_builder=query_buider)
+
+        # Assert
+        assert len(httpx_mock.get_requests()) == 1

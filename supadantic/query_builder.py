@@ -42,6 +42,7 @@ class QueryBuilder:
         self._update_data: dict[str, Any] | None = None
         self._delete_mode: bool = False
         self._count_mode: bool = False
+        self._order_by_field: tuple[str, bool] | None = None
 
     @property
     def select_fields(self) -> tuple[str, ...] | Literal['*']:
@@ -188,6 +189,18 @@ class QueryBuilder:
         """
 
         return self._count_mode
+
+    @property
+    def order_by_field(self) -> tuple[str, bool] | None:
+        """
+        Gets the field and direction for ordering query results.
+
+        Returns:
+            (tuple[str, bool] | None): A tuple containing the field name and a boolean indicating
+                                    descending order (True) or ascending order (False),
+                                    or None if no ordering has been set.
+        """
+        return self._order_by_field
 
     @property
     def mode(self) -> 'Mode':
@@ -360,6 +373,25 @@ class QueryBuilder:
         """
 
         self._count_mode = value
+
+    def set_order_by_field(self, value: str) -> None:
+        """
+        Sets the field and direction for ordering query results.
+
+        This method parses the input string to determine the field name and sort direction.
+        A field name prefixed with '-' indicates descending order.
+
+        Args:
+            value (str): The field name to order by, optionally prefixed with '-' for descending order.
+
+        Examples:
+            >>> query_builder.set_order_by_field('name')      # ascending order
+            >>> query_builder.set_order_by_field('-created')  # descending order
+        """
+
+        column = value.split('-')[-1]
+        desc = value.startswith('-')
+        self._order_by_field = (column, desc)
 
     def _dict_to_tuple(self, *, data: dict[str, str]) -> tuple[tuple[str, Any], ...]:
         """
