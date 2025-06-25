@@ -1,49 +1,32 @@
 ## Requirements
 - **Python >= 3.10**
-- You have to register at [supabase](https://supabase.com/)
-- You have to create:
+- You have to create in your supabase project:
     - **DB**
     - **Tables and its columns**
-- To connect to **supabase** via **python**, you must save:
-    - [Supabase URL](https://supabase.com/dashboard/project/jlabkatixtriusapedam/settings/api)
-    - [Supabase API public key](https://supabase.com/dashboard/project/jlabkatixtriusapedam/settings/api-keys)
+- Take the key that suits you best. For this example we recommend using `service_role`, but it is not suitable for production. You can read more [here](https://supabase.com/docs/guides/api/api-keys).
 
 ## Installation and setup the project
 First of all you need to install the main dependencies:
 ```python
 pip install supadantic fastapi uvicorn
 ```
-Let's create the new module called `main.py`. Inside this module you have to define `SUPABASE_URL` and `SUPABASE_KEY` **env variables**, e.g:
-```python
-import os
-
-os.environ['SUPABASE_URL'] = 'YOUR_SUPABASE_URL'
-os.environ['SUPABASE_KEY'] = 'YOUR_API_PUBLIC_KEY'
-```
+Then add`SUPABASE_URL` and `SUPABASE_KEY` **env variables** to `.env`.
 
 ## Usage supadantic with FastAPI
-I have already created two tables in **supabase**:
-- **`author`**
-- **`book`**
+Let’s define `book` and `author` tables in **supabase** like that:
+![DB Schema](img/db_schema.png)
 The tables have a 1:N relationship (one `author` can have several `book`).
 Here is the full example of FastAPI application integrated with supadantic models:
 ```python
-import os
-from typing import Any
-
 from supadantic.models import BaseSBModel
 from pydantic import BaseModel
 from fastapi import FastAPI, status, HTTPException
 from fastapi.responses import Response
 import uvicorn
 
-
-os.environ['SUPABASE_URL'] = 'YOUR_SUPABASE_URL'
-os.environ['SUPABASE_KEY'] = 'YOUR_API_PUBLIC_KEY'
-
 app = FastAPI()
 
-# define supadantic models
+# Define supadantic models
 class Author(BaseSBModel):
     name: str
     surname: str
@@ -51,17 +34,20 @@ class Author(BaseSBModel):
     biography: str = ""
     country: str = ""
 
+
 class Book(BaseSBModel):
     name: str
     genre: str
     count_pages: int | None = None
     author_id: int
 
-# define pydantic schemas
+
+# Define pydantic schemas
 class CreateAuthor(BaseModel):
     name: str
     surname: str
     age: int
+
 
 class UpdateAuthor(BaseModel):
     name: str | None = None
@@ -70,194 +56,113 @@ class UpdateAuthor(BaseModel):
     biography: str | None = None
     country: str | None = None
 
+
 class CreateBook(BaseModel):
     name: str
     genre: str
     author_id: int
+
 
 class UpdateBook(BaseModel):
     name: str | None = None
     genre: str | None = None
     count_pages: int | None = None
 
-# define crud functions
-def create_author(
-    author: CreateAuthor
-) -> Author:
-    new_author = Author.objects.create(**author.model_dump())
-    return new_author
 
-def update_author(
-    id: int,
-    data: dict[str, Any]
-) -> None:
+# Define endpoints
+@router.get("/")
+def authors_list():
+    try:
+        return list(Author.objects.all())
+    except Author.DoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Author not found."
+        )
+
+
+@router.get("/{id}/")
+def retrieve_author(id: int):
+    try:
+        return Author.objects.get(id=id)
+    except Author.DoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Author not found."
+        )
+
+
+@router.post("/")
+def create_author(author: CreateAuthor):
+    return Author.objects.create(**author.model_dump())
+
+
+@router.delete("/{id}/")
+def delete_author(id: int):
+    try:
+        Author.objects.get(id=id).delete()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Author.DoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Author not found."
+        )
+
+
+@router.patch("/{id}/")
+def update_author(id: int, data: UpdateAuthor):
+    updated_data = data.model_dump(exclude_unset=True)
     author = Author.objects.filter(id=id)
+
     if not author.exists():
-        raise BaseSBModel.DoesNotExist
-    author.update(**data)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Author not found."
+        )
+    author.update(**updated_data)
 
-def get_author(
-    id: int
-) -> Author:
-    return Author.objects.get(id=id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-def get_author_books(
-    id: int
-) -> list[Book]:
+
+@router.get("/{id}/books/")
+def author_book_list(id: int):
     books = Book.objects.filter(author_id=id)
     return list(books)
 
-def delete_author(
-    id: int
-) -> None:
-    author = Author.objects.get(id=id)
-    author.delete()
 
-def create_book(
-    book: CreateBook
-) -> Book:
-    new_book = Book.objects.create(**book.model_dump())
+@router.get("/{id}/books/{book_id}/")
+def retrieve_book(id: int, book_id: int):
+    try:
+        return Book.objects.get(id=book_id, author_id=id)
+    except Book.DoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Book not found."
+        )
+
+
+@router.post("/{id}/books/")
+def create_book(id: int, book: CreateBook):
+    new_book = Book.objects.create(**book.model_dump(), author_id=id)
     return new_book
 
-def update_book(
-    id: int,
-    data: dict[str, Any]
-) -> None:
-    book = Book.objects.filter(id=id)
+
+@router.patch("/{id}/books/{book_id}/")
+def update_book(id: int, book_id: int, data: UpdateBook):
+    updated_data = data.model_dump(exclude_unset=True)
+    book = Book.objects.filter(id=book_id, author_id=id)
     if not book.exists():
-        raise BaseSBModel.DoesNotExist
-    book.update(**data)
-
-def get_book(
-    id: int
-) -> Book:
-    return Book.objects.get(id=id)
-
-def delete_book(
-    id: int
-) -> None:
-    book = Book.objects.get(id=id)
-    book.delete()
-
-# define endpoints
-@app.get("/authors/{id}")
-def get_author_by_id(
-    id: int
-):
-    try:
-        user = get_author(id=id)
-        return user
-    except BaseSBModel.DoesNotExist:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND
+            status_code=status.HTTP_404_NOT_FOUND, detail="Book not found"
         )
+    book.update(**updated_data)
 
-@app.get("/authors/author_books/{id}")
-def get_author_books_by_id(
-    id: int
-):
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete("/{id}/books/{book_id}/")
+def delete_book(id: int, book_id: int):
     try:
-        author = get_author(id)
-        books = get_author_books(id=id)
-        return {
-            "author": author,
-            "books": books
-        }
-    except BaseSBModel.DoesNotExist:
+        Book.objects.get(id=book_id, author_id=id).delete()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Book.DoesNotExist:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND
-        )
-
-@app.post("/authors/new/")
-def create_new_author(
-    data: CreateAuthor
-):
-    user = create_author(data)
-    return user
-
-@app.delete("/authors/{id}")
-def delete_author_by_id(
-    id: int
-):
-    try:
-        delete_author(id)
-        return Response(
-            status_code=status.HTTP_204_NO_CONTENT
-        )
-    except BaseSBModel.DoesNotExist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND
-        )
-
-@app.patch("/authors/{id}")
-def update_author_by_id(
-    id: int,
-    data: UpdateAuthor
-):
-    try:
-        updated_data = data.model_dump(exclude_unset=True)
-        update_author(
-            id,
-            updated_data
-        )
-        return Response(
-            status_code=status.HTTP_204_NO_CONTENT
-        )
-    except BaseSBModel.DoesNotExist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND
-        )
-
-@app.get("/books/{id}")
-def get_book_by_id(
-    id: int
-):
-    try:
-        book = get_book(id=id)
-        return book
-    except BaseSBModel.DoesNotExist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND
-        )
-
-@app.post("/books/new/")
-def create_new_book(
-    data: CreateBook
-):
-    book = create_book(data)
-    return book
-
-@app.delete("/books/{id}")
-def delete_book_by_id(
-    id: int
-):
-    try:
-        delete_book(id)
-        return Response(
-            status_code=status.HTTP_204_NO_CONTENT
-        )
-    except BaseSBModel.DoesNotExist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND
-        )
-
-@app.patch("/books/{id}")
-def update_book_by_id(
-    id: int,
-    data: UpdateBook
-):
-    try:
-        updated_data = data.model_dump(exclude_unset=True)
-        update_book(
-            id,
-            updated_data
-        )
-        return Response(
-            status_code=status.HTTP_204_NO_CONTENT
-        )
-    except BaseSBModel.DoesNotExist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND
+            status_code=status.HTTP_404_NOT_FOUND, detail="Book not found"
         )
 
 
@@ -302,89 +207,50 @@ def clear_cache():
     Author.objects.all().delete()
 ```
 
-Now create `test_crud.py` module with following code:
+Then create `test_api.py` module with following code:
 ```python
 from typing import TYPE_CHECKING
 
-from main.py import CreateAuthor
-from main.py import create_author, get_author, update_author, delete_author
-from main.py import Author
-
-if TYPE_CHECKING:
-    from supadantic.clients.cache import CacheClient
-
-
-def create_author_data():
-        return CreateAuthor(
-            name="Alex",
-            surname="Pozh",
-            age=99
-        )
-
-def test_create_author(mock_model: "CacheClient"):
-    data = create_author_data()
-    created_author = create_author(data)
-    assert created_author.name == data.name
-    assert created_author.surname == data.surname
-    assert created_author.age == data.age
-    assert created_author.biography == ""
-    assert created_author.country == ""
-
-def test_delete_author(mock_model: "CacheClient"):
-    data = create_author_data()
-    created_author = create_author(data)
-    assert created_author.name == data.name
-
-    delete_author(created_author.id)
-    assert Author.objects.filter(id=created_author.id).exists() is False
-
-def test_get_author(mock_model: "CacheClient"):
-    data = create_author_data()
-    created_author = create_author(data)
-    user = get_author(created_author.id)
-    assert user == created_author
-
-def test_update_author(mock_model: "CacheClient"):
-    data = create_author_data()
-    created_author = create_author(data)
-
-    updated_fields = {
-        "name": "Qwerty",
-        "age": 123
-    }
-    update_author(
-        id=created_author.id,
-        data=updated_fields
-    )
-    author = get_author(id=created_author.id)
-
-    assert author.name == "Qwerty"
-    assert author.age == 123
-```
-
-Create `test_api.py` module with following code:
-```python
-from typing import TYPE_CHECKING
-
-from main.py import CreateAuthor, CreateBook
-from main.py import create_author, create_book
+from main import create_author
+from main import CreateAuthor
 
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
 
 
+# Tests for author endpoints
+def test_get_authors(client: "TestClient"):
+    author1 = CreateAuthor(name="Alex", surname="Pozh", age=99)
+    author2 = CreateAuthor(
+        name="Qwerty", surname="Qwerty", age=199, country="New Zeland"
+    )
+    create_author(author1)
+    create_author(author2)
+
+    response = client.get("/authors/")
+    body = response.json()
+
+    assert response.status_code == 200
+    assert isinstance(body, list)
+    assert len(body) == 2
+    assert body[0]["name"] == "Alex"
+    assert body[0]["surname"] == "Pozh"
+    assert body[0]["age"] == 99
+    assert body[0]["country"] == ""
+    assert body[0]["biography"] == ""
+
+
 def test_get_author_not_found(client: "TestClient"):
-    response = client.get("/authors/1")
+    response = client.get("/authors/1/")
     assert response.status_code == 404
-    assert response.json() == {
-                                "detail": "Not Found"
-                            }
+    assert response.json() == {"detail": "Author not found."}
+
 
 def test_get_author(client: "TestClient"):
     data = CreateAuthor(name="Alex", surname="Pozh", age=99)
     created = create_author(data)
 
-    response = client.get(f"/authors/{created.id}")
+    response = client.get(f"/authors/{created.id}/")
     body = response.json()
 
     assert response.status_code == 200
@@ -394,50 +260,53 @@ def test_get_author(client: "TestClient"):
     assert body["biography"] == ""
     assert body["country"] == ""
 
+
 def test_delete_author(client: "TestClient"):
     data = CreateAuthor(name="Alex", surname="Pozh", age=99)
     created = create_author(data)
 
-    response = client.delete(f"/authors/{created.id}")
+    response = client.delete(f"/authors/{created.id}/")
     assert response.status_code == 204
 
+
 def test_delete_author_not_found(client: "TestClient"):
-    response = client.delete(f"/authors/123")
+    response = client.delete(f"/authors/123/")
     assert response.status_code == 404
-    assert response.json() == {
-                                "detail": "Not Found"
-                            }
+    assert response.json() == {"detail": "Author not found."}
+
 
 def test_post_author(client: "TestClient"):
     response = client.post(
-        "/authors/new/",
+        "/authors/",
         json={
             "name": "Qwerty",
             "surname": "Werty",
-            "age": 109
-        }
+            "age": 109,
+            "biography": "The coolest writer of all time.",
+            "country": "New Zeland",
+        },
     )
     body = response.json()
+
     assert response.status_code == 200
     assert body["name"] == "Qwerty"
     assert body["surname"] == "Werty"
     assert body["age"] == 109
+    assert body["biography"] == "The coolest writer of all time."
+    assert body["country"] == "New Zeland"
+
 
 def test_patch_author(client: "TestClient"):
     data = CreateAuthor(name="Alex", surname="Pozh", age=99)
     created = create_author(data)
 
     patch_response = client.patch(
-        f"/authors/{created.id}",
-        json={
-            "name": "Qwerty",
-            "surname": "Werty",
-            "age": 109
-        }
+        f"/authors/{created.id}/",
+        json={"name": "Qwerty", "surname": "Werty", "age": 109},
     )
     assert patch_response.status_code == 204
 
-    get_response = client.get(f"/authors/{created.id}")
+    get_response = client.get(f"/authors/{created.id}/")
     body = get_response.json()
 
     assert get_response.status_code == 200
@@ -446,23 +315,109 @@ def test_patch_author(client: "TestClient"):
     assert body["surname"] == "Werty"
     assert body["age"] == 109
 
+
+# Tests for author's book endpoints
 def test_get_author_books(client: "TestClient"):
     data = CreateAuthor(name="Alex", surname="Pozh", age=99)
     created_author = create_author(data)
 
-    book1 = CreateBook(
-            name="Alola",
-            genre="poem",
-            author_id=created_author.id
-        )
-    created_book = create_book(book1)
+    response = client.get(f"/authors/{created_author.id}/books/")
+    body = response.json()
 
-    response = client.get(
-        f"/authors/author_books/{created_author.id}"
+    assert response.status_code == 200
+    assert isinstance(body, list)
+    assert len(body) == 0
+
+
+def test_get_author_book_not_found(client: "TestClient"):
+    data = CreateAuthor(name="Alex", surname="Pozh", age=99)
+    created_author = create_author(data)
+
+    response = client.get(f"/authors/{created_author.id}/books/1/")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Book not found."}
+
+
+def test_get_author_book(client: "TestClient"):
+    data = CreateAuthor(name="Alex", surname="Pozh", age=99)
+    created_author = create_author(data)
+
+    post_response = client.post(
+        f"/authors/{created_author.id}/books/",
+        json={"name": "Qwerty", "genre": "Poema", "count_pages": 14},
+    )
+    book = post_response.json()
+
+    response = client.get(f"/authors/{created_author.id}/books/{book['id']}/")
+    body = response.json()
+
+    assert response.status_code == 200
+    assert body["name"] == "Qwerty"
+    assert body["genre"] == "Poema"
+    assert body["count_pages"] == 14
+
+
+def test_post_author_books(client: "TestClient"):
+    data = CreateAuthor(name="Alex", surname="Pozh", age=99)
+    created_author = create_author(data)
+
+    response = client.post(
+        f"/authors/{created_author.id}/books/",
+        json={"name": "Qwerty", "genre": "Poema", "count_pages": 14},
     )
     body = response.json()
 
     assert response.status_code == 200
-    assert body["author"] == created_author.model_dump()
-    assert body["books"][0] == created_book.model_dump()
+    assert body["name"] == "Qwerty"
+    assert body["genre"] == "Poema"
+    assert body["count_pages"] == 14
+
+
+def test_patch_author_book(client: "TestClient"):
+    data = CreateAuthor(name="Alex", surname="Pozh", age=99)
+    created_author = create_author(data)
+
+    post_response = client.post(
+        f"/authors/{created_author.id}/books/",
+        json={"name": "Qwerty", "genre": "Poema", "count_pages": 14},
+    )
+    book = post_response.json()
+
+    patch_response = client.patch(
+        f"/authors/{created_author.id}/books/{book['id']}/",
+        json={"name": "Alola", "genre": "fair tale"},
+    )
+    assert patch_response.status_code == 204
+
+    get_response = client.get(f"/authors/{created_author.id}/books/{book['id']}/")
+    body = get_response.json()
+
+    assert get_response.status_code == 200
+    assert body["name"] == "Alola"
+    assert body["genre"] == "fair tale"
+    assert body["count_pages"] == 14
+
+
+def test_delete_author_book(client: "TestClient"):
+    data = CreateAuthor(name="Alex", surname="Pozh", age=99)
+    created_author = create_author(data)
+
+    post_response = client.post(
+        f"/authors/{created_author.id}/books/",
+        json={"name": "Qwerty", "genre": "Poema", "count_pages": 14},
+    )
+    book = post_response.json()
+
+    response = client.delete(f"/authors/{created_author.id}/books/{book['id']}/")
+    assert response.status_code == 204
+
+
+def test_delete_author_book_not_found(client: "TestClient"):
+    data = CreateAuthor(name="Alex", surname="Pozh", age=99)
+    created_author = create_author(data)
+
+    response = client.delete(f"/authors/{created_author.id}/books/203/")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Book not found"}
 ```
