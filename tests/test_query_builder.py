@@ -127,3 +127,15 @@ class TestQueryBuilder:
         query_builder.set_count_mode(True)
         assert query_builder.count_mode is True
         assert query_builder.mode == QueryBuilder.Mode.COUNT_MODE
+
+    def test_order_by(self):
+        # Arrange
+        query_builder = QueryBuilder()
+        assert query_builder.order_by_field is None
+
+        # Act
+        query_builder.set_order_by_field('value')
+        assert query_builder.order_by_field == ('value', False)
+
+        query_builder.set_order_by_field('-value')
+        assert query_builder.order_by_field == ('value', True)

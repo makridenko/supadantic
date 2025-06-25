@@ -187,7 +187,7 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
             )
 
         result = filter(_lambda_filter, self._cache_data.values())
-        return self._get_return_data(objects=result)
+        return self._get_return_data(objects=result, order_by=query_builder.order_by_field)
 
     def _count(self, *, query_builder: 'QueryBuilder') -> int:
         """
@@ -230,7 +230,9 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
 
         return result_data
 
-    def _get_return_data(self, *, objects: 'Iterable[dict[str, Any]]') -> list[dict[str, Any]]:
+    def _get_return_data(
+        self, *, objects: 'Iterable[dict[str, Any]]', order_by: tuple[str, bool] | None = None
+    ) -> list[dict[str, Any]]:
         """
         Applies the `_convert_obj` method to each record in an iterable and returns the result as a list.
 
@@ -239,9 +241,17 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
 
         Args:
             objects (Iterable[dict[str, Any]]): An iterable of records to convert.
+            order_by (tuple[str, bool] | None): A tuple containing the field name to sort by and
+                                            a boolean indicating descending (True) or ascending (False) order.
+                                            If None, no sorting is applied.
 
         Returns:
             (list[dict[str, Any]]): A list of records, where each record has been converted to return data
-            using the `_convert_obj` method.
+                                using the `_convert_obj` method. Records will be sorted if order_by is provided.
         """
-        return [self._convert_obj(obj=obj) for obj in objects]
+
+        result = [self._convert_obj(obj=obj) for obj in objects]
+        if order_by:
+            column, desc = order_by
+            result = sorted(result, key=lambda item: item[column], reverse=desc)
+        return result
