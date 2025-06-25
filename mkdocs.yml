@@ -5,40 +5,41 @@ site_description: Supadantic is a small Python library that allows you to manage
 copyright: Maintained by <a href="https://github.com/makridenko/">Alexey Makridenko</a>
 
 nav:
-  - Home:
-    - Overview: index.md
-  - API Documentation:
-    - Clients:
-      - BaseClient: clients/base.md
-      - CacheClient: clients/cache.md
-      - SupabaseClient: clients/supabase.md
-    - Models:
-      - BaseSBModel:
-        - ModelMetaclass: models/model_metaclass.md
-        - BaseSBModel: models/base_sb_model.md
-    - QSet: q_set.md
-    - QueryBuilder: query_builder.md
+- Home:
+  - Overview: index.md
+  - FastAPI Example: fast_api_usage.md
+- API Documentation:
+  - Clients:
+    - BaseClient: clients/base.md
+    - CacheClient: clients/cache.md
+    - SupabaseClient: clients/supabase.md
+  - Models:
+    - BaseSBModel:
+      - ModelMetaclass: models/model_metaclass.md
+      - BaseSBModel: models/base_sb_model.md
+  - QSet: q_set.md
+  - QueryBuilder: query_builder.md
 
 plugins:
-  - search
-  - mkdocstrings:
-      handlers:
-        python:
-          options:
-            docstring_style: google
-            show_doctring_examples: true
-            merge_init_into_class: true
-            show_source: true
-            docstring_options:
-              ignore_init_summary: true
-            separate_signature: true
-            show_root_heading: true
-            show_root_full_path: false
-            show_signature_annotations: true
-            show_symbol_type_heading: true
-            show_symbol_type_toc: true
-            signature_crossrefs: true
-            summary: true
+- search
+- mkdocstrings:
+    handlers:
+      python:
+        options:
+          docstring_style: google
+          show_doctring_examples: true
+          merge_init_into_class: true
+          show_source: true
+          docstring_options:
+            ignore_init_summary: true
+          separate_signature: true
+          show_root_heading: true
+          show_root_full_path: false
+          show_signature_annotations: true
+          show_symbol_type_heading: true
+          show_symbol_type_toc: true
+          signature_crossrefs: true
+          summary: true
 
 theme:
   name: 'material'
@@ -47,21 +48,21 @@ theme:
   icon:
     repo: fontawesome/brands/github
   features:
-    - announce.dismiss
-    - content.action.edit
-    - content.action.view
-    - content.code.annotate
-    - content.code.copy
-    - content.tooltips
-    - navigation.footer
-    - navigation.indexes
-    - navigation.sections
-    - navigation.tabs
-    - navigation.tabs.sticky
-    - navigation.top
-    - search.highlight
-    - search.suggest
-    - toc.follow
+  - announce.dismiss
+  - content.action.edit
+  - content.action.view
+  - content.code.annotate
+  - content.code.copy
+  - content.tooltips
+  - navigation.footer
+  - navigation.indexes
+  - navigation.sections
+  - navigation.tabs
+  - navigation.tabs.sticky
+  - navigation.top
+  - search.highlight
+  - search.suggest
+  - toc.follow
   palette:
     scheme: slate
     primary: black
@@ -69,22 +70,22 @@ theme:
 
 extra:
   social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/makridenko/supadantic
-    - icon: fontawesome/brands/python
-      link: https://pypi.org/project/supadantic/
+  - icon: fontawesome/brands/github
+    link: https://github.com/makridenko/supadantic
+  - icon: fontawesome/brands/python
+    link: https://pypi.org/project/supadantic/
 
 markdown_extensions:
-  - toc:
-      permalink: true
-  - pymdownx.arithmatex:
-      generic: true
-  - admonition
-  - pymdownx.keys
-  - pymdownx.magiclink
-  - pymdownx.superfences:
-      custom_fences:
-      - name: mermaid
-        class: mermaid
-  - pymdownx.tasklist:
-      custom_checkbox: true
+- toc:
+    permalink: true
+- pymdownx.arithmatex:
+    generic: true
+- admonition
+- pymdownx.keys
+- pymdownx.magiclink
+- pymdownx.superfences:
+    custom_fences:
+    - name: mermaid
+      class: mermaid
+- pymdownx.tasklist:
+    custom_checkbox: true
