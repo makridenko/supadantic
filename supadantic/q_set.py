@@ -411,7 +411,7 @@ class QSet(Generic[_M]):
 
         column = key.split('-')[-1]
         if column not in self._model_class.model_fields.keys():
-            raise self.InvalidField(f'Invalid field {column}!')
+            raise self.InvalidField(f"Invalid field: '{column}'!")
 
         self._query_builder.set_order_by_field(key)
         return self._copy()

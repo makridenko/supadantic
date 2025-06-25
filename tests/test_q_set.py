@@ -325,3 +325,6 @@ class TestQSet:
         assert (
             QSet(model_class=model_mock).order_by('-age').last() == QSet(model_class=model_mock).filter(age=1).first()
         )
+
+        with pytest.raises(QSet.InvalidField, match="Invalid field: 'test'!"):
+            QSet(model_class=model_mock).order_by('test')
