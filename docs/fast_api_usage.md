@@ -82,7 +82,7 @@ def retrieve_author(id: int) -> Author:
 
 
 @app.post("/authors/")
-def create_author(author: CreateAuthor) -> Author:
+def create_author(data: CreateAuthor) -> Author:
     return Author.objects.create(**author.model_dump())
 
 
@@ -136,7 +136,7 @@ def retrieve_book(author_id: int, id: int) -> Book:
 
 
 @app.post("/authors/{author_id}/books/")
-def create_book(author_id: int, book: CreateBook) -> Book:
+def create_book(author_id: int, data: CreateBook) -> Book:
     if not Author.objects.filter(id=author_id).exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Author not found."
@@ -231,6 +231,7 @@ class TestAuthorAPI:
         # Act
         response = test_api_client.get("/authors/")
 
+        # Assert
         assert response.status_code == 200
         assert response.json() == [
             {
@@ -262,6 +263,7 @@ class TestAuthorAPI:
         # Act
         response = test_api_client.get(f"/authors/{author.id}/")
 
+        # Assert
         assert response.status_code == 200
         assert response.json() == {
             "id": author.id,
