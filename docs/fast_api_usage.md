@@ -83,7 +83,7 @@ def retrieve_author(id: int) -> Author:
 
 @app.post("/authors/")
 def create_author(data: CreateAuthor) -> Author:
-    return Author.objects.create(**author.model_dump())
+    return Author.objects.create(**data.model_dump())
 
 
 @app.delete("/authors/{id}/")
@@ -141,7 +141,7 @@ def create_book(author_id: int, data: CreateBook) -> Book:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Author not found."
         )
-    return Book.objects.create(**book.model_dump(), author_id=author_id)
+    return Book.objects.create(**data.model_dump(), author_id=author_id)
 
 
 @app.patch("/authors/{author_id}/books/{id}/")
@@ -196,7 +196,7 @@ from main import Author
 
 @pytest.fixture(scope="session", autouse=True)
 def mock_db_client():
-    with patch.object(BaseSBModel, "db_client", return_value=CacheClient:
+    with patch.object(BaseSBModel, "db_client", return_value=CacheClient):
         yield
 
 
@@ -285,7 +285,7 @@ class TestAuthorAPI:
         assert response.status_code == 204
         assert not Author.objects.filter(id=author.id).exists()
 
-    def test_delete_author_not_found(self, test_api_client: 'TestClient':
+    def test_delete_author_not_found(self, test_api_client: 'TestClient'):
         # Act
         response = test_api_client.delete("/authors/9999/")
 
