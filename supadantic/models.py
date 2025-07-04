@@ -100,7 +100,7 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         """
 
         db_client = self._get_db_client()
-        data = self.model_dump(exclude={'id'})
+        data = self.model_dump(exclude={'id'}, mode='json')
 
         query_builder = QueryBuilder()
 
