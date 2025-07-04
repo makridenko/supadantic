@@ -300,12 +300,8 @@ class QSet(Generic[_M]):
             >>> num_updated = Model.objects.filter(active=True).update(name='new_name')
         """
 
-        for field in data.keys():
-            if field not in self._model_class.model_fields.keys():
-                raise self.InvalidField(
-                    f"Field '{field}' is not defined for {self._model_class.__name__} model."
-                    f"Available fields are: {', '.join(self._model_class.model_fields.keys())}"
-                )
+        validated_model: _M = self._model_class.model_validate(data)
+        data = validated_model.model_dump(mode='json', exclude_unset=True, exclude={'id'})
 
         self._query_builder.set_update_data(data)
         self._execute()
@@ -326,12 +322,8 @@ class QSet(Generic[_M]):
             (_M): The newly created model instance.
         """
 
-        for field in data.keys():
-            if field not in self._model_class.model_fields.keys():
-                raise self.InvalidField(
-                    f"Field '{field}' is not defined for {self._model_class.__name__} model."
-                    f"Available fields are: {', '.join(self._model_class.model_fields.keys())}"
-                )
+        validated_model: _M = self._model_class.model_validate(data)
+        data = validated_model.model_dump(mode='json', exclude={'id'})
 
         self._query_builder.set_insert_data(data)
         response_data = self.client.execute(query_builder=self._query_builder)
