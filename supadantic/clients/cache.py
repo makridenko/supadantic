@@ -52,7 +52,7 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
     It is NOT suitable for production environments.
     """
 
-    def __init__(self, table_name: str) -> None:
+    def __init__(self, table_name: str, schema: str | None = None) -> None:
         """
         Initializes the client with the table name and an empty cache.
 
@@ -63,7 +63,7 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
                          `BaseClient` interface and may be used in future
                          extensions of this class.
         """
-        super().__init__(table_name=table_name)
+        super().__init__(table_name=table_name, schema=schema)
 
         self._cache_data: dict[int, dict[str, Any]] = {}
 

@@ -1,7 +1,7 @@
 import ast
 from abc import ABC
 from copy import copy
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 from pydantic import BaseModel, model_validator
 from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
@@ -26,11 +26,13 @@ class ModelOptions:
 
     def __init__(
         self,
-        table_name: Optional[str] = None,
-        db_client: Optional[type['BaseClient']] = None,
+        table_name: str | None = None,
+        db_client: type['BaseClient'] | None = None,
+        schema: str | None = None,
     ):
         self.table_name = table_name
         self.db_client = db_client or SupabaseClient
+        self.schema = schema
 
 
 class ModelMetaclass(PydanticModelMetaclass):
@@ -49,6 +51,9 @@ class ModelMetaclass(PydanticModelMetaclass):
 
             if hasattr(meta, 'db_client'):
                 options.db_client = meta.db_client
+
+            if hasattr(meta, 'schema'):
+                options.schema = meta.schema
 
         cls._meta = options
         return cls
@@ -163,7 +168,8 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         Retrieves the database client instance for the model.
         """
         table_name = cls._get_table_name()
-        client = cls.db_client()(table_name)
+        schema = cls._meta.schema
+        client = cls.db_client()(table_name, schema)
         return client
 
     @model_validator(mode='before')

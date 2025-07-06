@@ -28,7 +28,7 @@ class BaseClient(ABC, metaclass=BaseClientMeta):
     for interacting with a specific database or service.
     """
 
-    def __init__(self, table_name: str) -> None:
+    def __init__(self, table_name: str, schema: str | None = None) -> None:
         """
         Initializes the client with the table name.
 
@@ -39,6 +39,7 @@ class BaseClient(ABC, metaclass=BaseClientMeta):
         """
 
         self.table_name = table_name
+        self.schema = schema
 
     def execute(self, *, query_builder: QueryBuilder) -> list[dict[str, Any]] | int:
         """

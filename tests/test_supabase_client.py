@@ -83,7 +83,6 @@ class TestSupabaseClient:
             ),
             status_code=200,
         )
-        httpx_mock.add_response(is_optional=True)
 
         query_builder = QueryBuilder()
         query_builder.set_equal(id=1)
@@ -132,7 +131,6 @@ class TestSupabaseClient:
             ),
             status_code=200,
         )
-        httpx_mock.add_response(is_optional=True)
 
         query_buider = QueryBuilder()
         query_buider.set_not_equal(title='test')
@@ -144,3 +142,27 @@ class TestSupabaseClient:
 
         # Assert
         assert len(httpx_mock.get_requests()) == 1
+
+    def test_select_with_schema(self, httpx_mock: 'HTTPXMock'):
+        # Arrange
+        httpx_mock.add_response(
+            method='GET',
+            url=httpx.URL(
+                'https://test.supabase.co/rest/v1/table_name',
+                params={'select': '*', 'id': 'eq.1', 'title': 'neq.test'},
+            ),
+            status_code=200,
+        )
+
+        query_builder = QueryBuilder()
+        query_builder.set_equal(id=1)
+        query_builder.set_not_equal(title='test')
+
+        # Act
+        supabase_client = SupabaseClient(table_name='table_name', schema='foo')
+        supabase_client.execute(query_builder=query_builder)
+
+        # Assert
+        assert len(httpx_mock.get_requests()) == 1
+        request = httpx_mock.get_requests()[0]
+        assert request.headers['accept-profile'] == 'foo'
