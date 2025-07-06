@@ -7,7 +7,7 @@ from .base import BaseClient
 
 
 if TYPE_CHECKING:
-    from postgrest._sync.request_builder import SyncSelectRequestBuilder
+    from postgrest._sync.request_builder import SyncRequestBuilder, SyncSelectRequestBuilder
     from postgrest.base_request_builder import BaseFilterRequestBuilder
 
     from supadantic.query_builder import QueryBuilder
@@ -25,7 +25,7 @@ class SupabaseClient(BaseClient):
     to initialize the Supabase client.
     """
 
-    def __init__(self, table_name: str):
+    def __init__(self, table_name: str, schema: str | None = None) -> None:
         """
         Initializes the Supabase client and sets up the query object.
 
@@ -33,11 +33,27 @@ class SupabaseClient(BaseClient):
             table_name (str): The name of the table to interact with.
         """
 
-        super().__init__(table_name=table_name)
+        super().__init__(table_name=table_name, schema=schema)
         url: str = os.getenv('SUPABASE_URL', default='')
         key: str = os.getenv('SUPABASE_KEY', default='')
+
+        supabase_client = self._get_supabase_client(url=url, key=key)
+        self.query = supabase_client
+
+    def _get_supabase_client(self, url: str, key: str) -> 'SyncRequestBuilder':
+        """
+        Returns the Supabase client query object.
+
+        This method is used to access the underlying Supabase client for executing queries.
+        It is primarily used internally by other methods in this class.
+
+        Returns:
+            (SyncRequestBuilder): The Supabase client query object.
+        """
         supabase_client = create_client(url, key)
-        self.query = supabase_client.table(table_name=self.table_name)
+        if self.schema:
+            supabase_client = supabase_client.schema(self.schema)
+        return supabase_client.table(self.table_name)
 
     def _delete(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
         """

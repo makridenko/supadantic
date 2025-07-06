@@ -47,3 +47,15 @@ class TestBaseSBModel:
 
     def test_objects(self, model_mock: type['ModelMock']):
         assert isinstance(model_mock.objects, QSet)
+
+
+class TestBaseSBModelCustomSchema:
+    def test_db_client_with_custom_schema(self, model_mock_custom_schema: type['ModelMock']):
+        # Prepare data
+        test_entity = model_mock_custom_schema(name='test_name')
+
+        # Execution
+        db_client = test_entity._get_db_client()
+
+        # Testing
+        assert db_client.schema == 'custom_schema'
