@@ -14,7 +14,7 @@
       
       
       
-        <link rel="next" href="clients/base/">
+        <link rel="next" href="fast_api_usage/">
       
       
       <link rel="icon" href="assets/images/favicon.png">
@@ -307,6 +307,8 @@
           
         
       
+        
+      
     
     
     
@@ -339,6 +341,11 @@
 
             </a>
             
+              
+              <label class="md-nav__link md-nav__link--active" for="__nav_1" id="__nav_1_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
           </div>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
@@ -348,6 +355,29 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="fast_api_usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FastAPI Example
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
           </ul>
@@ -855,10 +885,9 @@
     <span class="n">is_active</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="c1"># By default table name is class name in snake_case</span>
-    <span class="c1"># If you want to change it - you should implement _get_table_name method</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_table_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s1">&#39;db_user&#39;</span>
+    <span class="c1"># you can override it by setting `Meta.table_name` attribute</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">table_name</span> <span class="o">=</span> <span class="s1">&#39;db_user&#39;</span>
 
 <span class="c1"># Save user</span>
 <span class="n">active_user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Snow&#39;</span><span class="p">)</span>
@@ -930,13 +959,13 @@
         
         
           
-          <a href="clients/base/" class="md-footer__link md-footer__link--next" aria-label="Next: BaseClient">
+          <a href="fast_api_usage/" class="md-footer__link md-footer__link--next" aria-label="Next: FastAPI Example">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                BaseClient
+                FastAPI Example
               </div>
             </div>
             <div class="md-footer__button md-icon">

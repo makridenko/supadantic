@@ -309,6 +309,8 @@
           
         
       
+        
+      
     
     
     
@@ -338,6 +340,11 @@
 
             </a>
             
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
           </div>
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
@@ -347,6 +354,29 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fast_api_usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FastAPI Example
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
           </ul>
@@ -923,10 +953,7 @@
               Bases: <code><span title="pydantic._internal._model_construction.ModelMetaclass">ModelMetaclass</span></code></p>
 
 
-        <p>Metaclass for BaseSBModel, adding a custom <code>objects</code> property.</p>
-<p>This metaclass extends Pydantic's ModelMetaclass to provide a custom <code>objects</code>
-property on each class that uses it. The <code>objects</code> property returns a <code>QSet</code>
-instance, which is used for performing database queries related to the model.</p>
+        <p>Metaclass for BaseSBModel, handling Meta class configuration and objects property.</p>
 
 
 
