@@ -2,7 +2,7 @@ import ast
 import re
 from abc import ABC
 from copy import copy
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, TypeVar
 
 from pydantic import BaseModel, model_validator
 from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
@@ -40,14 +40,39 @@ def _to_snake_case(value: str) -> str:
     return re.sub(r'(?<!^)(?=[A-Z])', '_', value).lower()
 
 
+class ModelOptions:
+    """
+    Configuration class to store model metadata and options.
+    """
+
+    def __init__(
+        self,
+        table_name: Optional[str] = None,
+        db_client: Optional[type['BaseClient']] = None,
+    ):
+        self.table_name = table_name
+        self.db_client = db_client or SupabaseClient
+
+
 class ModelMetaclass(PydanticModelMetaclass):
     """
-    Metaclass for BaseSBModel, adding a custom `objects` property.
-
-    This metaclass extends Pydantic's ModelMetaclass to provide a custom `objects`
-    property on each class that uses it. The `objects` property returns a `QSet`
-    instance, which is used for performing database queries related to the model.
+    Metaclass for BaseSBModel, handling Meta class configuration and objects property.
     """
+
+    def __new__(mcs, name, bases, namespace):
+        cls = super().__new__(mcs, name, bases, namespace)
+        meta = namespace.get('Meta')
+        options = ModelOptions()
+
+        if meta is not None:
+            if hasattr(meta, 'table_name'):
+                options.table_name = meta.table_name
+
+            if hasattr(meta, 'db_client'):
+                options.db_client = meta.db_client
+
+        cls._meta = options
+        return cls
 
     @property
     def objects(cls: type[_M]) -> QSet[_M]:  # type: ignore
@@ -85,6 +110,7 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         pass
 
     id: int | None = None
+    _meta: ClassVar[ModelOptions]
 
     def save(self: _M) -> _M:
         """
@@ -142,35 +168,24 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
             (BaseClient): The database client class.
         """
 
-        return SupabaseClient
+        return cls._meta.db_client
 
     @classmethod
     def _get_table_name(cls) -> str:
         """
-        Gets the table name associated with the model, converting the class name to snake case.
-
-        This method converts the class name to snake_case to determine the corresponding
-        table name in the database.
-
-        Returns:
-            (str): The table name in snake_case.
+        Gets the table name associated with the model.
+        If no table_name is specified in Meta class, converts class name to snake_case.
         """
-        return _to_snake_case(cls.__name__)
+        return cls._meta.table_name or _to_snake_case(cls.__name__)
 
     @classmethod
     def _get_db_client(cls) -> 'BaseClient':
         """
-        Retrieves the database client instance for the model, configured with the table name.
-
-        This method creates a database client instance using the `db_client()` method
-        and initializes it with the appropriate table name.
-
-        Returns:
-            (BaseClient): An initialized instance of the database client.
+        Retrieves the database client instance for the model.
         """
-
         table_name = cls._get_table_name()
-        return cls.db_client()(table_name)
+        client = cls.db_client()(table_name)
+        return client
 
     @model_validator(mode='before')
     def _validate_data_from_supabase(cls, data: dict[str, Any]) -> dict[str, Any]:
