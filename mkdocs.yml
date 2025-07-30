@@ -8,6 +8,7 @@ nav:
 - Home:
   - Overview: index.md
   - FastAPI Example: fast_api_usage.md
+  - Filters Usage: filters_usage.md
 - API Documentation:
   - Clients:
     - BaseClient: clients/base.md
