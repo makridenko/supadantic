@@ -42,6 +42,8 @@ authors = Author.objects.all()
 ```python
 jack_london = Author.objects.get(name="Jack London")
 ```
+>**Pay attention💡**
+[get()](https://makridenko.github.io/supadantic/q_set/#supadantic.q_set.QSet.get) should return **one object**, otherwise it will raise `DoesNotExist` or `MultipleObjectsReturned` exceptions.
 
 ### Retrieving specific objects with `filter()` and `exclude()` methods
 If you want to select only a subset of the complete set of objects, you refine the initial [QuerySet](https://makridenko.github.io/supadantic/q_set/), adding filter conditions. The two most common ways to refine a [QuerySet](https://makridenko.github.io/supadantic/q_set/) are:
@@ -96,6 +98,8 @@ authors = Author.objects.exclude(id__lte=6) # it will have the logic of gt (grea
 ```python
 books = User.objects.filter(genre__in=["Novel", "Poems"])
 ```
+>**Pay attention💡**
+`__in` filter supports any `Iterable` object e.g. `list`, `tuple`, `set`.
 
 ### Chaining filters
 The result of refining a [QuerySet](https://makridenko.github.io/supadantic/q_set/) is itself a [QuerySet](https://makridenko.github.io/supadantic/q_set/), so it’s possible to chain refinements together. For example:
@@ -105,5 +109,14 @@ books = (
         .filter(genre="Novel")
         .filter(count_pages__gt=600)
         .filter(author_id=5)
+)
+```
+We also can combine `filter()` and `exclude()` methods:
+```python
+books = (
+    Book.objects
+        .filter(genre="Novel")
+        .filter(count_pages__gt=600)
+        .exclude(author_id__lt=2)
 )
 ```
