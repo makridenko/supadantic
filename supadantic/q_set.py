@@ -118,7 +118,7 @@ class QSet(Generic[_M]):
         Returns a QSet filtered by the given keyword arguments.
 
         Each keyword argument represents a field name and its desired value.
-        Multiple filters are combined with AND logic.
+        Multiple filters are combined with AND logic. [Usage example](https://makridenko.github.io/supadantic/filters_usage/). # noqa: E501
 
         Args:
             **filters: Keyword arguments representing the filter criteria.
@@ -157,7 +157,7 @@ class QSet(Generic[_M]):
         Excludes objects based on the provided keyword arguments.
 
         This method adds non-equality filters to the query. Only objects that do
-        not match any of the provided filters will be included in the resulting QSet.
+        not match any of the provided filters will be included in the resulting QSet. [Usage example](https://makridenko.github.io/supadantic/filters_usage/). # noqa: E501
 
         Args:
             **filters: Keyword arguments representing the filters to apply.
