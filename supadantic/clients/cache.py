@@ -1,7 +1,7 @@
 from copy import copy
 from typing import TYPE_CHECKING, Any
 
-from .base import BaseClient, BaseClientMeta
+from supadantic.clients.base import BaseClient, BaseClientMeta
 
 
 if TYPE_CHECKING:
@@ -86,11 +86,11 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
         filtered_data = self._filter(query_builder=query_builder)
         ids = [data['id'] for data in filtered_data]
 
-        result = []
-        for _id in ids:
-            result.append(self._cache_data.pop(_id))
+        deleted_records = []
+        for id_ in ids:
+            deleted_records.append(self._cache_data.pop(id_))
 
-        return self._get_return_data(objects=result)
+        return self._get_return_data(objects=deleted_records)
 
     def _insert(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
         """
@@ -109,14 +109,15 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
             field automatically assigned.
         """
 
-        if _ids := list(self._cache_data.keys()):
-            _id = _ids[-1] + 1
+        ids = list(self._cache_data.keys())
+        if ids:
+            id_ = ids[-1] + 1
         else:
-            _id = 1
+            id_ = 1
 
         insert_data = query_builder.insert_data if query_builder.insert_data else {}
-        self._cache_data[_id] = {'id': _id, **insert_data}
-        return [self._convert_obj(obj=self._cache_data[_id])]
+        self._cache_data[id_] = {'id': id_, **insert_data}
+        return [self._convert_obj(obj=self._cache_data[id_])]
 
     def _update(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
         """
@@ -137,13 +138,14 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
 
         filtered_data = self._filter(query_builder=query_builder)
 
-        result = []
-        for _id in [data['id'] for data in filtered_data]:
+        updated_records = []
+        ids = [data['id'] for data in filtered_data]
+        for id_ in ids:
             update_data = query_builder.update_data if query_builder.update_data else {}
-            self._cache_data[_id].update(update_data)
-            result.append(self._cache_data[_id])
+            self._cache_data[id_].update(update_data)
+            updated_records.append(self._cache_data[id_])
 
-        return self._get_return_data(objects=result)
+        return self._get_return_data(objects=updated_records)
 
     def _filter(self, *, query_builder: 'QueryBuilder') -> list[dict[str, Any]]:
         """
@@ -172,11 +174,11 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
         greater_than_or_equal_filters: dict[str, Any] = dict(pair for pair in query_builder.greater_than_or_equal)
         included_filters: dict[str, Any] = dict(pair for pair in query_builder.included)
 
-        def _lambda_filter(obj: dict[str, Any]) -> bool:
+        def _lambda_filter(obj: dict[str, Any]) -> bool:  # noqa: WPS430
             """Filter the records based on the equality and non-equality filters."""
             return all(
                 (
-                    all(obj[key] != value for key, value in not_equal_filters.items()),
+                    all(obj[key] != value for key, value in not_equal_filters.items()),  # noqa: WPS204
                     all(obj[key] == value for key, value in equal_filters.items()),
                     all(obj[key] <= value for key, value in less_than_or_equal_filters.items()),
                     all(obj[key] > value for key, value in greater_than_filters.items()),
@@ -225,7 +227,7 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
         result_data = copy(obj)
 
         for key, value in obj.items():
-            if type(value) in (list, tuple):
+            if type(value) in (list, tuple):  # noqa: WPS516
                 result_data.update({key: str(value)})
 
         return result_data

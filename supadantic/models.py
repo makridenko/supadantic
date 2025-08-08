@@ -6,17 +6,17 @@ from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 from pydantic import BaseModel, model_validator
 from pydantic._internal._model_construction import ModelMetaclass as PydanticModelMetaclass
 
-from .clients import SupabaseClient
-from .q_set import QSet
-from .query_builder import QueryBuilder
-from .utils import _to_snake_case
+from supadantic.clients import SupabaseClient
+from supadantic.q_set import QSet
+from supadantic.query_builder import QueryBuilder
+from supadantic.utils import _to_snake_case
 
 
 if TYPE_CHECKING:
     from clients.base import BaseClient
 
 
-_M = TypeVar('_M', bound='BaseSBModel')
+_M = TypeVar('_M', bound='BaseSBModel')  # noqa: WPS111
 
 
 class ModelOptions:
@@ -41,7 +41,7 @@ class ModelMetaclass(PydanticModelMetaclass):
     """
 
     def __new__(mcs, name, bases, namespace):
-        cls = super().__new__(mcs, name, bases, namespace)
+        target_cls = super().__new__(mcs, name, bases, namespace)
         meta = namespace.get('Meta')
         options = ModelOptions()
 
@@ -55,8 +55,8 @@ class ModelMetaclass(PydanticModelMetaclass):
             if hasattr(meta, 'schema'):
                 options.schema = meta.schema
 
-        cls._meta = options
-        return cls
+        target_cls._meta = options
+        return target_cls
 
     @property
     def objects(cls: type[_M]) -> QSet[_M]:  # type: ignore
@@ -84,14 +84,14 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         Exception raised when a query returns no results but at least one result was expected.
         """
 
-        pass
+        ...
 
     class MultipleObjectsReturned(Exception):
         """
         Exception raised when a query returns multiple results but only one result was expected.
         """
 
-        pass
+        ...
 
     id: int | None = None
     _meta: ClassVar[ModelOptions]
@@ -105,7 +105,7 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         data returned from the database after the save operation.
 
         Returns:
-            (_M): The saved model instance, updated with data from the database (e.g.,
+            (_Model): The saved model instance, updated with data from the database (e.g.,
                     the assigned ID for a new record).
         """
 
@@ -192,16 +192,18 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         result_dict = copy(data)
 
         for key, value in cls.model_json_schema()['properties'].items():
-            _field_is_array = any(
+            any_of_items = value.get("anyOf", [])
+            is_any_array = any(item.get("type") == "array" for item in any_of_items)
+            field_is_array = any(
                 (
                     # If field is required, it's possible to get type
                     value.get('type') == 'array',
                     # If field is optional, it's possible to get type from anyOf array
-                    any(item.get('type') == 'array' for item in value.get('anyOf', [])),
+                    is_any_array,
                 )
             )
 
-            if _field_is_array:
+            if field_is_array:
                 array_fields.append(key)
 
         for key, value in data.items():

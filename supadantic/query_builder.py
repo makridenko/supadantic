@@ -6,6 +6,10 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
+KeyValue = tuple[str, Any]
+KeyValueTuple = tuple[KeyValue, ...]
+
+
 class QueryBuilder:
     """
     A class for constructing database queries in a structured way.
@@ -393,7 +397,7 @@ class QueryBuilder:
         desc = value.startswith('-')
         self._order_by_field = (column, desc)
 
-    def _dict_to_tuple(self, *, data: dict[str, str]) -> tuple[tuple[str, Any], ...]:
+    def _dict_to_tuple(self, *, data: dict[str, str]) -> KeyValueTuple:
         """
         Converts a dictionary to a tuple of tuples.
 

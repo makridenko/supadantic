@@ -93,7 +93,12 @@ class TestQueryBuilder:
         assert query_builder.included == (('id__in', [1, 2, 3]),)
 
         query_builder.set_included(age__in=[18, 19])
-        assert query_builder.included == (('id__in', [1, 2, 3]), ('age__in', [18, 19]))
+        expected_included = (
+            ('id__in', [1, 2, 3]),
+            ('age__in', [18, 19]),
+        )
+
+        assert query_builder.included == expected_included
         assert query_builder.mode == QueryBuilder.Mode.FILTER_MODE
 
     def test_insert_data(self):

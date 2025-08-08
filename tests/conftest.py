@@ -12,5 +12,5 @@ def mock_env_vars():
     os.environ['SUPABASE_URL'] = 'https://test.supabase.co'
     os.environ['SUPABASE_KEY'] = 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiJ9.ZOxUwxBHPJQR4Q7q9FtqV3LFwP-P4jUVLXGb5JhKBLA'
     yield
-    del os.environ['SUPABASE_URL']
-    del os.environ['SUPABASE_KEY']
+    os.environ.pop('SUPABASE_URL', None)
+    os.environ.pop('SUPABASE_KEY', None)

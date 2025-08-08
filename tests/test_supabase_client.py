@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 import httpx
@@ -21,7 +22,7 @@ class TestSupabaseClient:
         httpx_mock.add_response(
             method="DELETE",
             url=httpx.URL('https://test.supabase.co/rest/v1/table_name', params={'id': 'eq.1', 'title': 'neq.test'}),
-            status_code=200,
+            status_code=HTTPStatus.OK,
         )
 
         query_builder = QueryBuilder()
@@ -40,7 +41,7 @@ class TestSupabaseClient:
         httpx_mock.add_response(
             method="POST",
             url="https://test.supabase.co/rest/v1/table_name",
-            status_code=201,
+            status_code=HTTPStatus.CREATED,
             match_json={'insert': 'data'},
         )
 
@@ -58,7 +59,7 @@ class TestSupabaseClient:
         httpx_mock.add_response(
             method="PATCH",
             url=httpx.URL("https://test.supabase.co/rest/v1/table_name", params={'id': 'eq.1', 'title': 'neq.test'}),
-            status_code=200,
+            status_code=HTTPStatus.OK,
             match_json={'update': 'data'},
         )
 
@@ -81,7 +82,7 @@ class TestSupabaseClient:
                 'https://test.supabase.co/rest/v1/table_name',
                 params={'select': '*', 'id': 'eq.1', 'title': 'neq.test', 'id__lte': 'lte.3'},
             ),
-            status_code=200,
+            status_code=HTTPStatus.OK,
         )
 
         query_builder = QueryBuilder()
@@ -107,7 +108,7 @@ class TestSupabaseClient:
                     'title': 'neq.test',
                 },
             ),
-            status_code=200,
+            status_code=HTTPStatus.OK,
         )
 
         query_builder = QueryBuilder()
@@ -129,7 +130,7 @@ class TestSupabaseClient:
                 'https://test.supabase.co/rest/v1/table_name',
                 params={'select': '*', 'title': 'neq.test', 'id__lte': 'lte.3', 'order': 'title.desc'},
             ),
-            status_code=200,
+            status_code=HTTPStatus.OK,
         )
 
         query_buider = QueryBuilder()
@@ -151,7 +152,7 @@ class TestSupabaseClient:
                 'https://test.supabase.co/rest/v1/table_name',
                 params={'select': '*', 'id': 'eq.1', 'title': 'neq.test'},
             ),
-            status_code=200,
+            status_code=HTTPStatus.OK,
         )
 
         query_builder = QueryBuilder()

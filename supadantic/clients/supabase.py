@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from supabase.client import create_client
 
-from .base import BaseClient
+from supadantic.clients.base import BaseClient
 
 
 if TYPE_CHECKING:
@@ -152,15 +152,15 @@ class SupabaseClient(BaseClient):
         """
 
         if count == 'exact':
-            _query = self.query.select(*query_builder.select_fields, count=count)
+            query = self.query.select(*query_builder.select_fields, count=count)
         else:
-            _query = self.query.select(*query_builder.select_fields)
+            query = self.query.select(*query_builder.select_fields)
             if query_builder.order_by_field:
                 column, desc = query_builder.order_by_field
-                _query = _query.order(column=column, desc=desc)
-        return _query
+                query = query.order(column=column, desc=desc)
+        return query
 
-    def _add_filters(self, *, query_builder: 'QueryBuilder') -> 'BaseFilterRequestBuilder':
+    def _add_filters(self, *, query_builder: 'QueryBuilder') -> 'BaseFilterRequestBuilder':  # noqa: WPS210
         """
         Adds filters to the query based on the query builder.
 
@@ -174,7 +174,7 @@ class SupabaseClient(BaseClient):
                                         the query with the added filters.
         """
 
-        _query = self.query
+        query = self.query
 
         equal = query_builder.equal
         not_equal = query_builder.not_equal
@@ -185,24 +185,24 @@ class SupabaseClient(BaseClient):
         included = query_builder.included
 
         for equal_filter in equal:
-            _query = _query.eq(*equal_filter)
+            query = query.eq(*equal_filter)
 
         for not_equal_filter in not_equal:
-            _query = _query.neq(*not_equal_filter)
+            query = query.neq(*not_equal_filter)
 
         for lte_filter in less_than_or_equal:
-            _query = _query.lte(*lte_filter)
+            query = query.lte(*lte_filter)
 
         for gt_filter in greater_than:
-            _query = _query.gt(*gt_filter)
+            query = query.gt(*gt_filter)
 
         for lt_filter in less_than:
-            _query = _query.lt(*lt_filter)
+            query = query.lt(*lt_filter)
 
         for gte_filter in greater_than_or_equal:
-            _query = _query.gte(*gte_filter)
+            query = query.gte(*gte_filter)
 
         for include_filter in included:
-            _query = _query.in_(*include_filter)
+            query = query.in_(*include_filter)
 
-        return _query
+        return query

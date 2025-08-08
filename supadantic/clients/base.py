@@ -12,7 +12,7 @@ class BaseClientMeta(ABCMeta):
     specific attributes).
     """
 
-    pass
+    __slots__ = ()
 
 
 class BaseClient(ABC, metaclass=BaseClientMeta):
