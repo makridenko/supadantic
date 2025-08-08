@@ -62,6 +62,8 @@ class CacheClient(BaseClient, metaclass=SingletoneMeta):
                          operations, it's stored for consistency with the
                          `BaseClient` interface and may be used in future
                          extensions of this class.
+            schema (str | None, optional): Name of the database schema containing
+                 the target table. Included for interface compatibility with BaseClient.
         """
         super().__init__(table_name=table_name, schema=schema)
 
