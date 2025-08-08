@@ -159,13 +159,18 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
         Reload this instance’s state from the database.
 
         Raises:
-            DoesNotExist: if no row with this instance’s PK exists.
             ValueError: if this instance has no primary key set.
         """
         if self.id is None:
             raise ValueError(f"Cannot refresh {self.__class__.__name__} without an `id`")
 
-        fresh: _M = self.__class__.objects.get(id=self.id)
+        query_builder = QueryBuilder()
+        query_builder.set_equal(id=self.id)
+
+        db_client = self._get_db_client()
+        raw: dict[str, Any] = db_client.execute(query_builder=query_builder)[0]
+
+        fresh = self.__class__.model_validate(raw, from_attributes=False)
 
         for name in self.__class__.model_fields.keys():
             setattr(self, name, getattr(fresh, name))
