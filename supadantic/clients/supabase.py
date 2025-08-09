@@ -31,6 +31,8 @@ class SupabaseClient(BaseClient):
 
         Args:
             table_name (str): The name of the table to interact with.
+            schema (str | None, optional): Name of the database schema containing
+                the target table. If None, the default schema will be used.
         """
 
         super().__init__(table_name=table_name, schema=schema)

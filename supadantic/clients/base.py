@@ -36,6 +36,8 @@ class BaseClient(ABC, metaclass=BaseClientMeta):
 
         Args:
             table_name (str): The name of the table to operate on.
+            schema (str | None, optional): Name of the database schema containing
+                the target table.
         """
 
         self.table_name = table_name
