@@ -4,18 +4,13 @@ repos:
     hooks:
     - id: black
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.2.0
+    rev: 7.3.0
     hooks:
     - id: flake8
       args: [--config=setup.cfg]
       additional_dependencies:
         [
-          "flake8-comprehensions==3.16.0",
-          "flake8-print==5.0.0",
-          "flake8-debugger==4.1.2",
-          "flake8-type-checking==3.0.0",
-          "flake8-class-attributes-order==0.3.0",
-          "flake8-simplify==0.21.0"
+          "wemake-python-styleguide==1.3.0"
         ]
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1

@@ -4,11 +4,12 @@ from supadantic.query_builder import QueryBuilder
 
 
 if TYPE_CHECKING:
-    from .clients.base import BaseClient
-    from .models import BaseSBModel
+    from supadantic.clients.base import BaseClient
+    from supadantic.models import BaseSBModel
 
 
-_M = TypeVar('_M', bound='BaseSBModel')
+_M = TypeVar('_M', bound='BaseSBModel')  # noqa: WPS111
+Defaults = dict[str, Any] | None
 
 
 class QSet(Generic[_M]):
@@ -37,14 +38,14 @@ class QSet(Generic[_M]):
         Exception raised when attempting to update or create a record with an invalid field.
         """
 
-        pass
+        ...
 
     class InvalidField(Exception):
         """
         Exception raised when attempting to filter with an invalid field.
         """
 
-        pass
+        ...
 
     def __init__(
         self,
@@ -66,6 +67,20 @@ class QSet(Generic[_M]):
         self._cache = cache
         self._query_builder = query_builder if query_builder else QueryBuilder()
 
+    @property
+    def client(self) -> 'BaseClient':
+        """
+        Gets the database client for the model.
+
+        This method retrieves the database client associated with the model class.
+        The database client is responsible for executing the queries.
+
+        Returns:
+            (BaseClient): The database client instance.
+        """
+
+        return self._model_class._get_db_client()
+
     def delete(self) -> int:
         """
         Deletes the objects in the QSet from the database.
@@ -84,20 +99,6 @@ class QSet(Generic[_M]):
         self._execute()
         return len(self._cache) if self._cache else 0
 
-    @property
-    def client(self) -> 'BaseClient':
-        """
-        Gets the database client for the model.
-
-        This method retrieves the database client associated with the model class.
-        The database client is responsible for executing the queries.
-
-        Returns:
-            (BaseClient): The database client instance.
-        """
-
-        return self._model_class._get_db_client()
-
     def all(self) -> 'QSet[_M]':
         """
         Returns a QSet containing all instances of the associated model.
@@ -113,7 +114,7 @@ class QSet(Generic[_M]):
 
         return self._copy()
 
-    def filter(self, **filters: Any) -> 'QSet[_M]':
+    def filter(self, **filters: Any) -> 'QSet[_M]':  # noqa: WPS231
         """
         Returns a QSet filtered by the given keyword arguments.
 
@@ -135,24 +136,24 @@ class QSet(Generic[_M]):
         for filter_field, value in filters.items():
             filter_type = filter_field.split("__")
 
-            _filters = {filter_type[0]: value}
+            filters = {filter_type[0]: value}
 
-            if len(filter_type) == 1:
-                self._query_builder.set_equal(**_filters)
-            elif filter_type[1] == "lte":
-                self._query_builder.set_less_than_or_equal(**_filters)
+            if len(filter_type) == 1:  # noqa: WPS223
+                self._query_builder.set_equal(**filters)
+            elif filter_type[1] == "lte":  # noqa: WPS204
+                self._query_builder.set_less_than_or_equal(**filters)
             elif filter_type[1] == "gt":
-                self._query_builder.set_greater_than(**_filters)
+                self._query_builder.set_greater_than(**filters)
             elif filter_type[1] == "lt":
-                self._query_builder.set_less_than(**_filters)
+                self._query_builder.set_less_than(**filters)
             elif filter_type[1] == "gte":
-                self._query_builder.set_greater_than_or_equal(**_filters)
+                self._query_builder.set_greater_than_or_equal(**filters)
             elif filter_type[1] == "in":
-                self._query_builder.set_included(**_filters)
+                self._query_builder.set_included(**filters)
 
         return self._copy()
 
-    def exclude(self, **filters: Any) -> 'QSet[_M]':
+    def exclude(self, **filters: Any) -> 'QSet[_M]':  # noqa: WPS231
         """
         Excludes objects based on the provided keyword arguments.
 
@@ -173,18 +174,18 @@ class QSet(Generic[_M]):
         for filter_field, value in filters.items():
             filter_type = filter_field.split("__")
 
-            _filters = {filter_type[0]: value}
+            filters = {filter_type[0]: value}
 
-            if len(filter_type) == 1:
-                self._query_builder.set_not_equal(**_filters)
+            if len(filter_type) == 1:  # noqa: WPS223
+                self._query_builder.set_not_equal(**filters)
             elif filter_type[1] == "lte":
-                self._query_builder.set_greater_than(**_filters)
+                self._query_builder.set_greater_than(**filters)
             elif filter_type[1] == "gt":
-                self._query_builder.set_less_than_or_equal(**_filters)
+                self._query_builder.set_less_than_or_equal(**filters)
             elif filter_type[1] == "lt":
-                self._query_builder.set_greater_than_or_equal(**_filters)
+                self._query_builder.set_greater_than_or_equal(**filters)
             elif filter_type[1] == "gte":
-                self._query_builder.set_less_than(**_filters)
+                self._query_builder.set_less_than(**filters)
 
         return self._copy()
 
@@ -332,7 +333,7 @@ class QSet(Generic[_M]):
 
         return self._model_class(**response_data[0])
 
-    def get_or_create(self, defaults: dict[str, Any] | None = None, **kwargs: Any) -> tuple[_M, bool]:
+    def get_or_create(self, defaults: Defaults = None, **kwargs: Any) -> tuple[_M, bool]:
         """
         Tries to retrieve an object with the given parameters or creates one if it doesn't exist.
 
@@ -408,6 +409,29 @@ class QSet(Generic[_M]):
         self._query_builder.set_order_by_field(key)
         return self._copy()
 
+    def __iter__(self):
+        self._execute()
+        return iter(self._cache)
+
+    def __len__(self) -> int:
+        self._execute()
+        return len(self._cache) if self._cache else 0
+
+    def __getitem__(self, index: int) -> _M:
+        self._execute()
+        return list(self)[index]
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} {list(self)} >'  # noqa: WPS237
+
+    def __eq__(self, obj: object) -> bool:
+        return all(
+            (
+                self._model_class == getattr(obj, '_model_class'),
+                self._cache == getattr(obj, '_cache'),
+            )
+        )
+
     def _execute(self) -> None:
         """
         Executes the query and populates the cache with the results.
@@ -448,26 +472,3 @@ class QSet(Generic[_M]):
             (QSet[_M]): A new QSet instance that is a copy of the original.
         """
         return self.__class__(model_class=self._model_class, cache=self._cache, query_builder=self._query_builder)
-
-    def __iter__(self):
-        self._execute()
-        return iter(self._cache)
-
-    def __len__(self) -> int:
-        self._execute()
-        return len(self._cache) if self._cache else 0
-
-    def __getitem__(self, index: int) -> _M:
-        self._execute()
-        return list(self)[index]
-
-    def __repr__(self) -> str:
-        return f'<{self.__class__.__name__} {list(self)} >'
-
-    def __eq__(self, obj: object) -> bool:
-        return all(
-            (
-                self._model_class == getattr(obj, '_model_class'),
-                self._cache == getattr(obj, '_cache'),
-            )
-        )

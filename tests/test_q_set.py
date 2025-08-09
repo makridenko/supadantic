@@ -266,14 +266,25 @@ class TestQSet:
         )
 
     def test_get_or_create(self, model_mock: type['ModelMock']):
-        expected_obj = model_mock(name='test', age=21).save()
-        assert QSet(model_class=model_mock).get_or_create(name='test', defaults={'age': 23}) == (expected_obj, False)
+        # existing object path
+        expected = model_mock(name='test', age=21).save()
+        obj, was_created = QSet(model_class=model_mock).get_or_create(
+            name='test',
+            defaults={'age': 23},
+        )
+        assert was_created is False
+        assert obj == expected
+        assert obj.age == 21  # defaults must not override existing
 
-        created_obj, result = QSet(model_class=model_mock).get_or_create(name='create', defaults={'age': 23})
-        assert result is True
-        assert created_obj.id is not None
-        assert created_obj.name == 'create'
-        assert created_obj.age == 23
+        # creation path
+        created, was_created = QSet(model_class=model_mock).get_or_create(
+            name='create',
+            defaults={'age': 23},
+        )
+        assert was_created is True
+        assert created.id is not None
+        assert created.name == 'create'
+        assert created.age == 23
 
     def test_exists(self, model_mock: type['ModelMock']):
         model_mock.objects.all().delete()
@@ -298,17 +309,21 @@ class TestQSet:
         model_mock(name='test', age=4).save()
 
         # Assert
-        assert (
-            QSet(model_class=model_mock).order_by('age').first() == QSet(model_class=model_mock).filter(age=1).first()
-        )
-        assert QSet(model_class=model_mock).order_by('age').last() == QSet(model_class=model_mock).filter(age=4).last()
+        actual_qs_first_asc = QSet(model_class=model_mock).order_by('age').first()
+        expected_qs_first_asc = QSet(model_class=model_mock).filter(age=1).first()
+        assert actual_qs_first_asc == expected_qs_first_asc
 
-        assert (
-            QSet(model_class=model_mock).order_by('-age').first() == QSet(model_class=model_mock).filter(age=4).first()
-        )
-        assert (
-            QSet(model_class=model_mock).order_by('-age').last() == QSet(model_class=model_mock).filter(age=1).first()
-        )
+        actual_qs_last_asc = QSet(model_class=model_mock).order_by('age').last()
+        expected_qs_last_asc = QSet(model_class=model_mock).filter(age=4).last()
+        assert actual_qs_last_asc == expected_qs_last_asc
+
+        actual_qs_first_dsc = QSet(model_class=model_mock).order_by('-age').first()
+        expected_qs_first_dsc = QSet(model_class=model_mock).filter(age=4).first()
+        assert actual_qs_first_dsc == expected_qs_first_dsc
+
+        actual_qs_last_dsc = QSet(model_class=model_mock).order_by('-age').last()
+        expected_qs_last_dsc = QSet(model_class=model_mock).filter(age=1).first()
+        assert actual_qs_last_dsc == expected_qs_last_dsc
 
         with pytest.raises(QSet.InvalidField, match="Invalid field: 'test'!"):
             QSet(model_class=model_mock).order_by('test')
