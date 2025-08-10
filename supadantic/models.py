@@ -154,6 +154,27 @@ class BaseSBModel(BaseModel, ABC, metaclass=ModelMetaclass):
 
         return cls._meta.db_client
 
+    def refresh_from_db(self: _M) -> None:
+        """
+        Reload this instance’s state from the database.
+
+        Raises:
+            ValueError: if this instance has no primary key set.
+        """
+        if self.id is None:
+            raise ValueError(f"Cannot refresh {self.__class__.__name__} without an `id`")
+
+        query_builder = QueryBuilder()
+        query_builder.set_equal(id=self.id)
+
+        db_client = self._get_db_client()
+        raw: dict[str, Any] = db_client.execute(query_builder=query_builder)[0]
+
+        fresh = self.__class__.model_validate(raw, from_attributes=False)
+
+        for name in self.__class__.model_fields.keys():
+            setattr(self, name, getattr(fresh, name))
+
     @classmethod
     def _get_table_name(cls) -> str:
         """

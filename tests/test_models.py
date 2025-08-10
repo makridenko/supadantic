@@ -48,6 +48,30 @@ class TestBaseSBModel:
     def test_objects(self, model_mock: type['ModelMock']):
         assert isinstance(model_mock.objects, QSet)
 
+    def test_refresh_from_db(self, model_mock: type['ModelMock']):
+        original = model_mock(
+            name='initial',
+            some_optional_list=['old', 'data'],
+            some_optional_tuple=('old', 'data'),
+        ).save()
+
+        model_mock.objects.filter(id=original.id).update(
+            name='updated',
+            some_optional_tuple=('updated', 'data'),
+        )
+
+        assert original.id == original.id
+        assert original.name == 'initial'
+        assert original.some_optional_list == ['old', 'data']
+        assert original.some_optional_tuple == ('old', 'data')
+
+        original.refresh_from_db()
+
+        assert original.id == original.id
+        assert original.name == 'updated'
+        assert original.some_optional_list == ['old', 'data']
+        assert original.some_optional_tuple == ('updated', 'data')
+
 
 class TestBaseSBModelCustomSchema:
     def test_db_client_with_custom_schema(self, model_mock_custom_schema: type['ModelMock']):
